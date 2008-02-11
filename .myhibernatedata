@@ -1,0 +1,22 @@
+#
+#Thu Jan 24 09:24:40 EST 2008
+genBasicCompId=true
+sessionFactoryName=net.bzresults.dam.model.HibernateSessionFactory
+profile=
+daoSFId=sessionFactory
+version=3.1
+jndiPath=
+detectM2M=true
+reStrategyClass=
+springDaoFile=src/main/java/applicationContext.xml
+useJavaTypes=true
+keyGenerator=sequence
+libInstallFolder=/src/main/webapp/WEB-INF/lib
+addLibs2Project=true
+genVersionTag=true
+sessionFactoryId=
+basePersistenceClass=
+reSettingsFile=/bzresults-dam/hibernate.reveng.xml
+configFile=/bzresults-dam/src/main/java/hibernate.cfg.xml
+createConfigFile=true
+addLibs2Classpath=true
