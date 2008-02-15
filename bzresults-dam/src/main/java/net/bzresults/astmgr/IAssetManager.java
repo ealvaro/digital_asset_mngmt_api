@@ -21,21 +21,23 @@ public interface IAssetManager {
 	public abstract void deleteAsset(String fileName) throws IOException;
 
 	// Folder CRUDs
-	public abstract void createUserFolder(String folderName);
+	public abstract void createUserFolder(String folderName) throws AssetManagerException ;
 
 	public abstract void protectFolder(String folderName);
 	
-	public abstract void moveFolder(String folderName, String toFolderName) throws IOException;
+	public abstract void moveFolder(String folderName, String toFolderName) throws AssetManagerException, IOException;
 
-	public abstract void changeToFolder(java.lang.Long id);
+	public abstract void changeToFolder(java.lang.Long id) throws AssetManagerException;
 	
-	public abstract void changeToFolder(String folderName);
+	public abstract void changeToFolder(String folderName) throws AssetManagerException;
 
 	public abstract void changeToParent();
 
 	public abstract void virtualFolder(String queryName);
 	
-	public abstract void deleteFolder(String folderName);
+	public abstract void deleteFolder(java.lang.Long id) throws AssetManagerException;
+
+	public abstract void deleteFolder(String folderName) throws AssetManagerException;
 
 	public abstract void addAssetTag(String assetName, String tagName, String tagValue);
 	

@@ -4,9 +4,10 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.fileupload.FileUploadException;
-
 import net.bzresults.astmgr.AssetManager;
+import net.bzresults.astmgr.AssetManagerException;
+
+import org.apache.commons.fileupload.FileUploadException;
 
 public class MoveFolderAction implements IDAMAction {
 	private HttpServletRequest request;
@@ -18,7 +19,7 @@ public class MoveFolderAction implements IDAMAction {
 		this.am = am;
 	}
 
-	public void execute() throws FileUploadException, IOException, Exception {
+	public void execute() throws AssetManagerException, FileUploadException, IOException, Exception {
 		String folderName = request.getParameter("name");
 		String toFolderName = request.getParameter("toname");
 		if (toFolderName != null)

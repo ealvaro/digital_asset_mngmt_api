@@ -108,8 +108,17 @@ public class AssetDAO extends HibernateDaoSupport {
 		}
 	}
 
-	public List findByFileName(Object fileName) {
-		return findByProperty(FILE_NAME, fileName);
+	public List findByFileName(String fileName) {
+//		return findByProperty(FILE_NAME, fileName);
+		log.debug("finding DAMAsset instance with property name: like " + fileName);
+		try {
+			String queryString = "from DAMAsset as model where model." + FILE_NAME + " like '%" + fileName + "%'";
+			return getHibernateTemplate().find(queryString);
+		} catch (RuntimeException re) {
+			log.error("find by property name failed", re);
+			throw re;
+		}
+		
 	}
 
 	public List findByValveId(Object valveId) {

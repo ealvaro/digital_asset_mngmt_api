@@ -63,8 +63,7 @@ public class FolderDAO extends HibernateDaoSupport {
 	public DAMFolder findById(java.lang.Long id) {
 		log.warn("getting DAMFolder instance with id: " + id);
 		try {
-			DAMFolder instance = (DAMFolder) getHibernateTemplate().get(
-					"net.bzresults.astmgr.model.DAMFolder", id);
+			DAMFolder instance = (DAMFolder) getHibernateTemplate().get("net.bzresults.astmgr.model.DAMFolder", id);
 			return instance;
 		} catch (RuntimeException re) {
 			log.error("get failed", re);
@@ -76,8 +75,7 @@ public class FolderDAO extends HibernateDaoSupport {
 		log.warn("finding DAMFolder instance by example");
 		try {
 			List results = getHibernateTemplate().findByExample(instance);
-			log.warn("find by example successful, result size: "
-					+ results.size());
+			log.warn("find by example successful, result size: " + results.size());
 			return results;
 		} catch (RuntimeException re) {
 			log.error("find by example failed", re);
@@ -86,11 +84,9 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public List findByProperty(String propertyName, Object value) {
-		log.warn("finding DAMFolder instance with property: " + propertyName
-				+ ", value: " + value);
+		log.warn("finding DAMFolder instance with property: " + propertyName + ", value: " + value);
 		try {
-			String queryString = "from DAMFolder as model where model."
-					+ propertyName + "= ?";
+			String queryString = "from DAMFolder as model where model." + propertyName + "= ?";
 			return getHibernateTemplate().find(queryString, value);
 		} catch (RuntimeException re) {
 			log.error("find by property name failed", re);
@@ -105,12 +101,12 @@ public class FolderDAO extends HibernateDaoSupport {
 	public DAMFolder getFolder(String propertyName, Object value, java.lang.Long id) {
 		log.warn("finding Folder with id = " + id + " instance with property: " + propertyName + ", value: " + value);
 		try {
-			String queryString = "from DAMFolder as model where model." + propertyName + "= ? AND model." + FolderDAO.ID
-					+ "='" + id + "'";
+			String queryString = "from DAMFolder as model where model." + propertyName + "= ? AND model."
+					+ FolderDAO.ID + "='" + id + "'";
 			// There should only be one folder with that id.
 			return (DAMFolder) getHibernateTemplate().find(queryString, value).get(0);
 		} catch (IndexOutOfBoundsException ioobe) {
-			log.error("find byproperty: " + propertyName + ", value: " + value + " failed");
+			log.error("find folder: " + propertyName + "='" + value + "' & " + FolderDAO.ID + "='" + id + "' failed");
 			return null;
 		} catch (RuntimeException re) {
 			log.error("find by property name failed", re);
@@ -121,13 +117,18 @@ public class FolderDAO extends HibernateDaoSupport {
 	public DAMFolder getFolder(String propertyName, Object value, String folderName) {
 		log.warn("finding " + folderName + " Folder instance with property: " + propertyName + ", value: " + value);
 		try {
-			String queryString = "from DAMFolder as model where model." + propertyName + "= ? AND model." + FolderDAO.NAME
-					+ "='" + folderName + "'";
-			// There should only be one folder with that name, and if there is more than one the first one will be returned.
-			// If a unique one is needed call the other getFolder function.
+			String queryString = "from DAMFolder as model where model." + propertyName + "= ? AND model."
+					+ FolderDAO.NAME + "='" + folderName + "'";
+			// TODO handle situation when there is more than one folder with
+			// same name at different hierarchy levels (return the correct one).
+			// There should only be one folder with that name, and if there is
+			// more than one the first one will be returned.
+			// If a unique one is needed call the other getFolder function with
+			// id parameter.
 			return (DAMFolder) getHibernateTemplate().find(queryString, value).get(0);
 		} catch (IndexOutOfBoundsException ioobe) {
-			log.error("find byproperty: " + propertyName + ", value: " + value + " failed");
+			log.error("find folder: " + propertyName + "='" + value + "' & " + FolderDAO.NAME + "='" + folderName
+					+ "' failed");
 			return null;
 		} catch (RuntimeException re) {
 			log.error("find by property name failed", re);
@@ -189,8 +190,7 @@ public class FolderDAO extends HibernateDaoSupport {
 	public DAMFolder merge(DAMFolder detachedInstance) {
 		log.warn("merging DAMFolder instance");
 		try {
-			DAMFolder result = (DAMFolder) getHibernateTemplate().merge(
-					detachedInstance);
+			DAMFolder result = (DAMFolder) getHibernateTemplate().merge(detachedInstance);
 			log.warn("merge successful");
 			return result;
 		} catch (RuntimeException re) {

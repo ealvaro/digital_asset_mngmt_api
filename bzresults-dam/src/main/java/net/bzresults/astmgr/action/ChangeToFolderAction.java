@@ -3,6 +3,7 @@ package net.bzresults.astmgr.action;
 import javax.servlet.http.HttpServletRequest;
 
 import net.bzresults.astmgr.AssetManager;
+import net.bzresults.astmgr.AssetManagerException;
 
 public class ChangeToFolderAction implements IDAMAction {
 	private HttpServletRequest request;
@@ -14,7 +15,7 @@ public class ChangeToFolderAction implements IDAMAction {
 		this.am = am;
 	}
 
-	public void execute() {
+	public void execute() throws AssetManagerException {
 		String strFolderID = request.getParameter("id");
 		if (!(strFolderID == null)) {
 			Long folderID = Long.parseLong(strFolderID);

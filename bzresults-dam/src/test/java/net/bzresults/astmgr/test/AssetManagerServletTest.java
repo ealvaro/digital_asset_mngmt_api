@@ -36,7 +36,7 @@ public class AssetManagerServletTest extends TestCase {
 		MockHttpServletResponse mockHttpServletResponse = null;
 		AssetManagerServlet amserv = new AssetManagerServlet();
 		try {
-			mockHttpServletRequest = new MockHttpServletRequest("GET", "/dam/dam");
+			mockHttpServletRequest = new MockHttpServletRequest("GET", "/dam/damsvc");
 			// http://localhost:8087/dam/damsvc?clientid=20
 			mockHttpServletRequest.setParameter("clientid", "20");
 			amserv.doGet(mockHttpServletRequest, mockHttpServletResponse = new MockHttpServletResponse());
