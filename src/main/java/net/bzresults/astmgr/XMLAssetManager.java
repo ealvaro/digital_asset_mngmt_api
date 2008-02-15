@@ -2,6 +2,7 @@ package net.bzresults.astmgr;
 
 import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.Set;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -13,6 +14,7 @@ import javax.xml.transform.stream.StreamResult;
 import net.bzresults.astmgr.dao.FolderDAO;
 import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
+import net.bzresults.astmgr.model.DAMTag;
 
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -20,6 +22,7 @@ import org.xml.sax.helpers.AttributesImpl;
 public class XMLAssetManager {
 	private static final String FOLDER_TAG = "folder";
 	private static final String ASSET_TAG = "asset";
+	private static final String ASSETS_TAG = "assets";
 
 	public static void sendXMLStructure(PrintWriter out, DAMFolder currentFolder) {
 		StreamResult streamResult = new StreamResult(out);
@@ -48,8 +51,6 @@ public class XMLAssetManager {
 	 */
 	private static void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder) throws SAXException {
 		createFolderTag(hd, currentFolder);
-		// SUBFOLDERS tag.
-		// hd.startElement("", "", "subfolders", new AttributesImpl());
 		Iterator folderIterator = currentFolder.getSubFolders().iterator();
 		while (folderIterator.hasNext()) {
 			DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
@@ -57,7 +58,7 @@ public class XMLAssetManager {
 			if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE))
 				createXMLFolderHierarchy(hd, dAMFolder);
 		}
-		// hd.endElement("", "", "subfolders");
+		createAssetsTag(hd, currentFolder);
 		hd.endElement("", "", FOLDER_TAG);
 	}
 
@@ -65,11 +66,13 @@ public class XMLAssetManager {
 		AttributesImpl atts = new AttributesImpl();
 		// FOLDER tag.
 		atts.clear();
+		// Folders with no id are virtual
 		if (currentFolder.getId() != null)
 			atts.addAttribute("", "", "id", "CDATA", currentFolder.getId().toString());
 		atts.addAttribute("", "", "name", "CDATA", currentFolder.getName());
 		atts.addAttribute("", "", "description", "CDATA", currentFolder.getDescription());
 		atts.addAttribute("", "", "format", "CDATA", currentFolder.getFormat());
+		// Client id is displayed at the root level only
 		if (currentFolder.getName().equals(FolderDAO.ROOTNAME)) {
 			atts.addAttribute("", "", "clientid", "CDATA", currentFolder.getClientId().toString());
 			atts.addAttribute("", "", "valveid", "CDATA", currentFolder.getValveId());
@@ -93,17 +96,7 @@ public class XMLAssetManager {
 			try {
 				hd.startDocument();
 				createFolderTag(hd, currentFolder);
-				// ASSETS tag.
-				hd.startElement("", "", "assets", new AttributesImpl());
-				Iterator assetIterator = currentFolder.getAssetFiles().iterator();
-				if (assetIterator != null)
-					while (assetIterator.hasNext()) {
-						DAMAsset dAMAsset = (DAMAsset) assetIterator.next();
-						createAssetTag(hd, dAMAsset);
-					}
-				hd.endElement("", "", "assets");
-				// SUBFOLDERS tag.
-				// hd.startElement("", "", "subfolders", new AttributesImpl());
+				createAssetsTag(hd, currentFolder);
 				Iterator folderIterator = currentFolder.getSubFolders().iterator();
 				if (folderIterator != null)
 					while (folderIterator.hasNext()) {
@@ -125,6 +118,25 @@ public class XMLAssetManager {
 		}
 	}
 
+	private static void createAssetsTag(TransformerHandler hd, DAMFolder currentFolder) {
+		Set<DAMAsset> assets = currentFolder.getAssetFiles();
+		if (assets.size() > 0)
+			try {
+				// ASSETS tag.
+				hd.startElement("", "", ASSETS_TAG, new AttributesImpl());
+				Iterator assetIterator = assets.iterator();
+				if (assetIterator != null)
+					while (assetIterator.hasNext()) {
+						DAMAsset dAMAsset = (DAMAsset) assetIterator.next();
+						createAssetTag(hd, dAMAsset);
+					}
+				hd.endElement("", "", ASSETS_TAG);
+			} catch (SAXException se) {
+
+			}
+
+	}
+
 	private static void createAssetTag(TransformerHandler hd, DAMAsset dAMAsset) throws SAXException {
 		AttributesImpl atts = new AttributesImpl();
 		// ASSET tag.
@@ -134,8 +146,19 @@ public class XMLAssetManager {
 		atts.addAttribute("", "", "read_only", "CDATA", dAMAsset.getReadOnly().toString());
 		atts.addAttribute("", "", "upload_date", "CDATA", dAMAsset.getUploadDate().toString());
 		atts.addAttribute("", "", "owner_id", "CDATA", dAMAsset.getOwnerId().toString());
+		createTags(atts, dAMAsset);
 		hd.startElement("", "", ASSET_TAG, atts);
 		hd.endElement("", "", ASSET_TAG);
+	}
+
+	private static void createTags(AttributesImpl atts, DAMAsset dAMAsset) {
+		// TAGS as attributes
+		Iterator tagIterator = dAMAsset.getAssetTags().iterator();
+		if (tagIterator != null)
+			while (tagIterator.hasNext()) {
+				DAMTag dAMTag = (DAMTag) tagIterator.next();
+				atts.addAttribute("", "", dAMTag.getTagAttrib(), "CDATA", dAMTag.getTagValue());
+			}
 	}
 
 	public static void sendXMLMsg(PrintWriter out, String tagXML, String errorMsg) {

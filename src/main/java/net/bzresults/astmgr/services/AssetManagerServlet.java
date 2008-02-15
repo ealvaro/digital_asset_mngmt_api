@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import net.bzresults.astmgr.AssetManager;
+import net.bzresults.astmgr.AssetManagerException;
 import net.bzresults.astmgr.XMLAssetManager;
 import net.bzresults.astmgr.action.AddAssetTagAction;
 import net.bzresults.astmgr.action.ChangeToFolderAction;
@@ -17,6 +18,7 @@ import net.bzresults.astmgr.action.ChangeToParentAction;
 import net.bzresults.astmgr.action.CreateAssetAction;
 import net.bzresults.astmgr.action.CreateUserFolderAction;
 import net.bzresults.astmgr.action.DeleteAssetAction;
+import net.bzresults.astmgr.action.DeleteAssetTagAction;
 import net.bzresults.astmgr.action.DeleteFolderAction;
 import net.bzresults.astmgr.action.FindAssetsByNameAction;
 import net.bzresults.astmgr.action.FindAssetsByTagAction;
@@ -94,11 +96,12 @@ public class AssetManagerServlet extends HttpServlet {
 						session.setAttribute(AM_PARAM, am);
 					} else
 						XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder());
+				} catch (AssetManagerException ame) {
+					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
 				} catch (FileUploadException fue) {
 					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:"
 							+ am.getCurrentClientId() + " had an error.");
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error writing uploaded files for clientid:"
 							+ am.getCurrentClientId());
 				}
@@ -121,7 +124,7 @@ public class AssetManagerServlet extends HttpServlet {
 	}
 
 	private void processAction(HttpServletRequest request, AssetManager am, String action) throws FileUploadException,
-			IOException, Exception {
+			IOException, Exception, AssetManagerException {
 		IDAMAction damAction = null;
 		// ?action=createUserFolder&name=testingfolder
 		if (action.equals("createUserFolder")) {
@@ -170,6 +173,10 @@ public class AssetManagerServlet extends HttpServlet {
 		// ?action=addAssetTag&name=My%20Picture.jpg&tag=make&value=Ford
 		if (action.equals("addAssetTag")) {
 			damAction = new AddAssetTagAction(request, am);
+		} else
+		// ?action=deleteAssetTag&name=My%20Picture.jpg&tag=make
+		if (action.equals("deleteAssetTag")) {
+			damAction = new DeleteAssetTagAction(request, am);
 		} else
 		// ?action=findAssetsByName&name=My%20Picture.jpg
 		if (action.equals("findAssetsByName")) {

@@ -11,6 +11,8 @@ import java.util.HashSet;
 
 import junit.framework.TestCase;
 import net.bzresults.astmgr.AssetManager;
+import net.bzresults.astmgr.AssetManagerException;
+import net.bzresults.astmgr.XMLAssetManager;
 import net.bzresults.astmgr.dao.AssetDAO;
 import net.bzresults.astmgr.dao.FolderDAO;
 import net.bzresults.astmgr.dao.TagDAO;
@@ -152,6 +154,9 @@ public class AssetManagerTest extends TestCase {
 		manager.addAssetTag(TESTFILENAME, "MODEL", "Escape Hybrid");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
 				4);
+		manager.addAssetTag(TESTFILENAME, "Color", "Black");
+		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
+				5);
 	}
 
 	/**
@@ -161,7 +166,7 @@ public class AssetManagerTest extends TestCase {
 	public void testDeleteAssetTag() {
 		manager.deleteAssetTag(TESTFILENAME, "MODEL");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
-				3);
+				4);
 	}
 
 	/**
@@ -193,7 +198,7 @@ public class AssetManagerTest extends TestCase {
 	 */
 	public void testFindAssetsByTag() {
 
-		manager.findAssetsByTag("Make", "Ford");
+		manager.findAssetsByTag("Color", "Black");
 
 		assertEquals(manager.getCurrentFolder().getAssetFiles().size(), 1);
 	}
@@ -209,8 +214,8 @@ public class AssetManagerTest extends TestCase {
 
 			manager.updateAssetTitle(newFileName, "Changed Title");
 
-			assertEquals(tagMngr.getTagsByAttribValue("TITLE",newFileName).size(), 0);
-			assertEquals(tagMngr.getTagsByAttribValue("TITLE","Changed Title").size(), 1);
+			assertEquals(tagMngr.getTagsByAttribValue("TITLE", newFileName).size(), 0);
+			assertEquals(tagMngr.getTagsByAttribValue("TITLE", "Changed Title").size(), 1);
 		}
 	}
 
@@ -219,9 +224,11 @@ public class AssetManagerTest extends TestCase {
 	 * {@link net.bzresults.astmgr.AssetManager#createUserFolder(java.lang.String)}.
 	 */
 	public void testCreateUserFolder() {
-
-		manager.createUserFolder(localFolderToTest.getName());
-
+		try {
+			manager.createUserFolder(localFolderToTest.getName());
+		} catch (AssetManagerException ame) {
+			log.warn(ame.getMessage());
+		}
 		assertEquals(folderMngr.findByName(localFolderToTest.getName()).size(), 1);
 	}
 
@@ -267,6 +274,8 @@ public class AssetManagerTest extends TestCase {
 			String originalPath = manager.getCurrentFolder().getPath();
 			try {
 				manager.moveFolder(localFolderToTest.getName(), "My Images");
+			} catch (AssetManagerException ame) {
+				log.warn(ame.getMessage());
 			} catch (IOException fnfe) {
 				log.warn("Cannot move folder '" + localFolderToTest.getName() + "'");
 			}
@@ -287,9 +296,11 @@ public class AssetManagerTest extends TestCase {
 	 * {@link net.bzresults.astmgr.AssetManager#changeToFolder(java.lang.String)}.
 	 */
 	public void testChangeToFolderByName() {
-
-		manager.changeToFolder("My Images");
-
+		try {
+			manager.changeToFolder("My Images");
+		} catch (AssetManagerException ame) {
+			log.warn(ame.getMessage());
+		}
 		assertEquals(manager.getCurrentFolder().getName(), "My Images");
 	}
 
@@ -298,8 +309,11 @@ public class AssetManagerTest extends TestCase {
 	 * {@link net.bzresults.astmgr.AssetManager#changeToFolder(java.lang.String)}.
 	 */
 	public void testChangeToParent() {
-
-		manager.changeToFolder("My Images");
+		try {
+			manager.changeToFolder("My Images");
+		} catch (AssetManagerException ame) {
+			log.warn(ame.getMessage());
+		}
 		manager.changeToParent();
 
 		assertEquals(manager.getCurrentFolder().getName(), "ROOT");
@@ -310,9 +324,12 @@ public class AssetManagerTest extends TestCase {
 	 * {@link net.bzresults.astmgr.AssetManager#changeToFolder(java.lang.Long)
 	 */
 	public void testChangeToFolderById() {
-
-		manager.changeToFolder(folderMngr.getFolder(FolderDAO.CLIENT_ID, manager.getCurrentClientId(),
-				localFolderToTest.getName()).getId());
+		try {
+			manager.changeToFolder(folderMngr.getFolder(FolderDAO.CLIENT_ID, manager.getCurrentClientId(),
+					localFolderToTest.getName()).getId());
+		} catch (AssetManagerException ame) {
+			log.warn(ame.getMessage());
+		}
 
 		assertEquals(manager.getCurrentFolder().getName(), localFolderToTest.getName());
 	}
@@ -326,8 +343,11 @@ public class AssetManagerTest extends TestCase {
 		String originalPath = assetBeforeDelete.getPathAndName();
 		log.debug("going to be deleting this: " + originalPath + " from this current folder: "
 				+ localFolderToTest.getName());
-
-		manager.changeToFolder(localFolderToTest.getName());
+		try {
+			manager.changeToFolder(localFolderToTest.getName());
+		} catch (AssetManagerException ame) {
+			log.warn(ame.getMessage());
+		}
 		if (manager.getCurrentFolder().getAssetFiles().isEmpty()) {
 			fail("No Asset files to delete");
 		} else {
@@ -350,15 +370,17 @@ public class AssetManagerTest extends TestCase {
 	 * {@link net.bzresults.astmgr.AssetManager#deleteFolder(java.lang.String)}.
 	 */
 	public void testDeleteFolder() {
-		manager.changeToFolder("My Images");
-		if (manager.getCurrentFolder().getSubFolders().isEmpty()) {
-			fail("No folders to delete");
-		} else {
-
-			manager.deleteFolder(localFolderToTest.getName());
-
-			assertEquals(folderMngr.findByName(localFolderToTest.getName()).size(), 0);
+		try {
+			manager.changeToFolder("My Images");
+			if (manager.getCurrentFolder().getSubFolders().isEmpty())
+				fail("No folders to delete");
+			else
+				manager.deleteFolder(localFolderToTest.getName());
+		} catch (AssetManagerException ame) {
+			log.warn(ame.getMessage());
 		}
+
+		assertEquals(folderMngr.findByName(localFolderToTest.getName()).size(), 0);
 	}
 
 }

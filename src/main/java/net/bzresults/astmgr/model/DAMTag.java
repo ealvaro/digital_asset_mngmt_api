@@ -2,6 +2,19 @@ package net.bzresults.astmgr.model;
 
 
 /**
+ * Tags can be considered as general categories in which case the tag name is irrelevant. Examples are:
+ * 			cat1 = flowers
+ * 			cat2 = parks
+ * 			cat3 = blue
+ * Tags can also be considered as industry specific (well-known) categories in which case the tag name not only is relevant but important because helps the search and user input to be easier and faster.  Examples are
+ * 			In the automobile industry:
+ * 				make = ford
+ * 				model = escape hybrid
+ * 				year = 2007
+ * 			In the advertising industry:
+ * 				orientation = landscape
+ * 				license-type = royalty-free
+ * 				color-type = B&W
  * @author escobara
  * @hibernate.class table="DAM_TAGS" lazy = "false"
  */
