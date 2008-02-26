@@ -51,14 +51,16 @@ public class XMLAssetManager {
 	 */
 	private static void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder) throws SAXException {
 		createFolderTag(hd, currentFolder);
-		Iterator folderIterator = currentFolder.getSubFolders().iterator();
-		while (folderIterator.hasNext()) {
-			DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
-			// FOLDER tag.
-			if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE))
-				createXMLFolderHierarchy(hd, dAMFolder);
+		if (currentFolder != null) {
+			Iterator folderIterator = currentFolder.getSubFolders().iterator();
+			while (folderIterator.hasNext()) {
+				DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
+				// FOLDER tag.
+				if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE))
+					createXMLFolderHierarchy(hd, dAMFolder);
+			}
+			createAssetsTag(hd, currentFolder);
 		}
-		createAssetsTag(hd, currentFolder);
 		hd.endElement("", "", FOLDER_TAG);
 	}
 
@@ -66,20 +68,22 @@ public class XMLAssetManager {
 		AttributesImpl atts = new AttributesImpl();
 		// FOLDER tag.
 		atts.clear();
-		// Folders with no id are virtual
-		if (currentFolder.getId() != null)
-			atts.addAttribute("", "", "id", "CDATA", currentFolder.getId().toString());
-		atts.addAttribute("", "", "name", "CDATA", currentFolder.getName());
-		atts.addAttribute("", "", "description", "CDATA", currentFolder.getDescription());
-		atts.addAttribute("", "", "format", "CDATA", currentFolder.getFormat());
-		// Client id is displayed at the root level only
-		if (currentFolder.getName().equals(FolderDAO.ROOTNAME)) {
-			atts.addAttribute("", "", "clientid", "CDATA", currentFolder.getClientId().toString());
-			atts.addAttribute("", "", "valveid", "CDATA", currentFolder.getValveId());
+		if (currentFolder != null) {
+			// Folders with no id are virtual
+			if (currentFolder.getId() != null)
+				atts.addAttribute("", "", "id", "CDATA", currentFolder.getId().toString());
+			atts.addAttribute("", "", "name", "CDATA", currentFolder.getName());
+			atts.addAttribute("", "", "description", "CDATA", currentFolder.getDescription());
+			atts.addAttribute("", "", "format", "CDATA", currentFolder.getFormat());
+			// Client id is displayed at the root level only
+			if (currentFolder.getName().equals(FolderDAO.ROOTNAME)) {
+				atts.addAttribute("", "", "clientid", "CDATA", currentFolder.getClientId().toString());
+				atts.addAttribute("", "", "valveid", "CDATA", currentFolder.getValveId());
+			}
+			atts.addAttribute("", "", "hidden", "CDATA", currentFolder.getHidden().toString());
+			atts.addAttribute("", "", "read_only", "CDATA", currentFolder.getReadOnly().toString());
+			atts.addAttribute("", "", "system", "CDATA", currentFolder.getSystem().toString());
 		}
-		atts.addAttribute("", "", "hidden", "CDATA", currentFolder.getHidden().toString());
-		atts.addAttribute("", "", "read_only", "CDATA", currentFolder.getReadOnly().toString());
-		atts.addAttribute("", "", "system", "CDATA", currentFolder.getSystem().toString());
 		hd.startElement("", "", FOLDER_TAG, atts);
 	}
 

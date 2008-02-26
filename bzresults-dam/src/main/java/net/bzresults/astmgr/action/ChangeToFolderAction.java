@@ -24,7 +24,5 @@ public class ChangeToFolderAction implements IDAMAction {
 			String folderName = request.getParameter("name");
 			am.changeToFolder((folderName == null ? "ROOT" : folderName));
 		}
-
 	}
-
 }

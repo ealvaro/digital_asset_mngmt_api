@@ -29,7 +29,12 @@ div#leftCol {
 div#rightCol {
 	margin: 3px 10px;
 }
-  .highlight { background-color: #FFFFDD; font-weight: bold; padding: 2px; }
+
+.highlight {
+	background-color: #FFFFDD;
+	font-weight: bold;
+	padding: 2px;
+}
 </style>
 		<script type="text/javascript" language="javascript1.2">
 
@@ -95,35 +100,37 @@ function showSessionInfo()
 					</a> no params needed - nulls out AM in session
 				</li>
 				<li>
-					<a href="javascript:void(0)"
-						onclick="doIt('changeToFolder', 'id=2')">changeToFolder</a> - id=2
-					&nbsp;&nbsp; (for different param value use Submit call feature)
-				</li>
-				<li>
-					<a href="javascript:void(0)"
-						onclick="doIt('changeToFolder', 'name=My%20Videos')">changeToFolder</a>
-					- name=My Videos
-				</li>
-				<li>
 					<a href="javascript:void(0)" onclick="doIt('changeToParent', '')">changeToParent</a>
 					- no param
 				</li>
 				<br />
 
 				<li>
-					<a href="javascript:void(0)"
-						onclick="doIt('createUserFolder', 'name=testingfolder')">createUserFolder</a>
-					- name=testingfolder passed
+					Call to
+					<b>createUserFolder</b> requires name param.
 					<br />
-					- watch output for name assigned (testingfolder) and use
-					deleteFolder afterward to clean up!
-					<br />
-					- could try using moveFolder to move it somewhere before deleting
-					it
-					<br />
-					<br />
+					<blockquote>
+						- Folder will be created in current folder
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Folder Name:
+									</td>
+									<td>
+										<input type="text" name="createUserFolderName" size="20" value="testingfolder" />
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<input type="button" value="Call createUserFolder"
+											onclick="doCreateUserFolderCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
 				</li>
-
 				<li>
 					Call to
 					<b>moveFolder</b> requires name and toname param.
@@ -160,15 +167,79 @@ function showSessionInfo()
 				</li>
 				<li>
 					Call to
-					<b>deleteFolder</b> requires name param.
+					<b>changeToFolder</b> requires name OR id param.
 					<br />
 					<blockquote>
 						<form style="padding: 6px 0">
-							Folder Name:
-							<input type="text" name="deleteFolderName" size="20" value="" />
-							&nbsp;
-							<input type="button" value="Call deleteFolder"
-								onclick="doDeleteFolderCall(this.form)" />
+							<table>
+								<tr>
+									<td>
+										Folder Name:
+									</td>
+									<td>
+										<input type="text" name="changeToFolderName" size="20" value="testingfolder" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										or
+									</td>
+								</tr>
+								<tr>
+									<td>
+										Folder Id:
+									</td>
+									<td>
+										<input type="text" name="changeToFolderId" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										&nbsp;
+										<input type="button" value="Call changeToFolder"
+											onclick="doChangeToFolderCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
+				</li>
+				<li>
+					Call to
+					<b>deleteFolder</b> requires name OR id param.
+					<br />
+					<blockquote>
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Folder Name:
+									</td>
+									<td>
+										<input type="text" name="deleteFolderName" size="20" value="testingfolder" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										or
+									</td>
+								</tr>
+								<tr>
+									<td>
+										Folder Id:
+									</td>
+									<td>
+										<input type="text" name="deleteFolderId" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										&nbsp;
+										<input type="button" value="Call deleteFolder"
+											onclick="doDeleteFolderCall(this.form)" />
+									</td>
+								</tr>
+							</table>
 						</form>
 					</blockquote>
 				</li>
@@ -180,9 +251,7 @@ function showSessionInfo()
 					works in IE
 					<br />
 					- Remember asset is created in whatever folder is the current
-					folder in your am in session
-					<br />
-					- Remember to clean up by using deleteAsset below!
+					folder in your DAM session
 					<br />
 					<br />
 				</li>
@@ -242,21 +311,35 @@ function showSessionInfo()
 						<form style="padding: 6px 0">
 							<table>
 								<tr>
-									Asset Name:
-									<input type="text" name="addAssetName" size="20" value="" />
+									<td>
+										Asset Name:
+									</td>
+									<td>
+										<input type="text" name="addAssetName" size="20" value="" />
+									</td>
 								</tr>
 								<tr>
-									Asset Tag:
-									<input type="text" name="addAssetTag" size="20" value="" />
+									<td>
+										Asset Tag:
+									</td>
+									<td>
+										<input type="text" name="addAssetTag" size="20" value="" />
+									</td>
 								</tr>
 								<tr>
-									Tag Value:
-									<input type="text" name="addAssetValue" size="20" value="" />
+									<td>
+										Tag Value:
+									</td>
+									<td>
+										<input type="text" name="addAssetValue" size="20" value="" />
+									</td>
 								</tr>
 								<tr>
-									&nbsp;
-									<input type="button" value="Call Add Asset Tag"
-										onclick="doAddAssetTagCall(this.form)" />
+									<td>
+										&nbsp;
+										<input type="button" value="Call Add Asset Tag"
+											onclick="doAddAssetTagCall(this.form)" />
+									</td>
 								</tr>
 							</table>
 						</form>
@@ -270,17 +353,27 @@ function showSessionInfo()
 						<form style="padding: 6px 0">
 							<table>
 								<tr>
-									Asset Name:
-									<input type="text" name="deleteAssetName" size="20" value="" />
+									<td>
+										Asset Name:
+									</td>
+									<td>
+										<input type="text" name="deleteAssetName" size="20" value="" />
+									</td>
 								</tr>
 								<tr>
-									Asset Tag:
-									<input type="text" name="deleteAssetTag" size="20" value="" />
+									<td>
+										Asset Tag:
+									</td>
+									<td>
+										<input type="text" name="deleteAssetTag" size="20" value="" />
+									</td>
 								</tr>
 								<tr>
-									&nbsp;
-									<input type="button" value="Call Delete Asset Tag"
-										onclick="doDeleteAssetTagCall(this.form)" />
+									<td>
+										&nbsp;
+										<input type="button" value="Call Delete Asset Tag"
+											onclick="doDeleteAssetTagCall(this.form)" />
+									</td>
 								</tr>
 							</table>
 						</form>
@@ -308,17 +401,23 @@ function showSessionInfo()
 						<form style="padding: 6px 0">
 							<table>
 								<tr>
-									Asset Tag:
-									<input type="text" name="deleteAssetTag" size="20" value="" />
+									<td>
+										Asset Tag:
+									</td>
+									<td>
+										<input type="text" name="deleteAssetTag" size="20" value="" />
+									</td>
 								</tr>
 								<tr>
-									Tag Value:
-									<input type="text" name="deleteTagValue" size="20" value="" />
-								</tr>
-								<tr>
-									&nbsp;
-									<input type="button" value="Call Find Assets By Tag"
-										onclick="doFindAssetsByTagCall(this.form)" />
+									<td>
+										Tag Value:
+									</td>
+									<td>
+										<input type="text" name="deleteTagValue" size="20" value="" />
+										&nbsp;
+										<input type="button" value="Call Find Assets By Tag"
+											onclick="doFindAssetsByTagCall(this.form)" />
+									</td>
 								</tr>
 							</table>
 						</form>

@@ -90,10 +90,38 @@
       return false;
     }
     
+    function doCreateUserFolderCall(f)
+    {
+      var folderName = f.createUserFolderName.value;
+      var params = "name="+folderName;
+      doIt('createUserFolder',params)
+      return false;
+    }   
+    
+    function doChangeToFolderCall(f)
+    {
+      var folderName = f.changeToFolderName.value;
+      var folderId = f.changeToFolderId.value;
+      var params = null;
+      if (folderName == "")
+      		params = "id="+folderId;
+      else
+            params = "name="+folderName;
+      
+      doIt('changeToFolder',params)
+      return false;
+    }   
+    
     function doDeleteFolderCall(f)
     {
       var folderName = f.deleteFolderName.value;
-      var params = "name="+folderName;
+      var folderId = f.deleteFolderId.value;
+      var params = null;
+      if (folderName == "")
+      		params = "id="+folderId;
+      else
+            params = "name="+folderName;
+      
       doIt('deleteFolder',params)
       return false;
     }   
