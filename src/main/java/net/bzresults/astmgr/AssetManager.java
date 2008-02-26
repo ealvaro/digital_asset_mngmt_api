@@ -17,6 +17,8 @@ import net.bzresults.astmgr.dao.TagDAO;
 import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
 import net.bzresults.astmgr.model.DAMTag;
+import net.bzresults.imageio.ImageHelper;
+import net.bzresults.util.ImageUtils;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.FileUtils;
@@ -126,7 +128,7 @@ public class AssetManager implements IAssetManager {
 	 * 
 	 * @see net.bzresults.astmgr.IAssetManager#createAsset(java.lang.String,java.lang.String,FileItem)
 	 */
-	public void createAssetFromFileItem(String filePathName, FileItem item) throws IOException {
+	public void createAssetFromFileItem(String filePathName, FileItem item) throws AssetManagerException, Exception {
 		if (filePathName != null && !"".equals(filePathName)) {
 			String assetName = FilenameUtils.getName(filePathName);
 			if (assetName != null && !"".equals(assetName)) {
@@ -141,17 +143,12 @@ public class AssetManager implements IAssetManager {
 							MockMultipartFile multipartFile = new MockMultipartFile(filePathName, new FileInputStream(
 									inputfile));
 							writeMultipartFile(localAsset, multipartFile, currentFolder.getPath());
-							currentFolder.getAssetFiles().add(localAsset);
-							assetMngr.save(localAsset);
-						} else
-							try {
-								writeFile(localAsset, item, currentFolder.getPath());
-								currentFolder.getAssetFiles().add(localAsset);
-								assetMngr.attachDirty(localAsset);
-							} catch (Exception e) {
-								throw new IOException("Cannot write/copy DAMAsset file '" + localAsset.getFileName()
-										+ "'");
-							}
+						} else {
+							writeFile(localAsset, item, currentFolder.getPath());
+						}
+						currentFolder.getAssetFiles().add(localAsset);
+						assetMngr.save(localAsset);
+						addDefaultAssetTags(localAsset);
 					} else
 						log.debug(this.currentClientId + ": DAMAsset name '" + assetName
 								+ "' already exists under the folder '" + currentFolder.getName() + "'");
@@ -167,17 +164,18 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (Please leave this method to test uploading assets from html page.
 	 */
-	private void writeFile(DAMAsset dAMAsset, FileItem item, String path) throws Exception {
+	private void writeFile(DAMAsset dAMAsset, FileItem item, String path) throws AssetManagerException, Exception {
 		File dir = new File(path);
 		if (!dir.exists()) {
 			// directory MUST exist
-			log.debug(this.currentClientId + ": Directory '" + path + "' does not exist");
+			throw new AssetManagerException(this.currentClientId + ": Directory '" + path + "' does not exist");
 		}
-		File tosave = new File(dir, dAMAsset.getFileName());
-		item.write(tosave);
+		File toSave = new File(dir, dAMAsset.getFileName());
+		item.write(toSave);
+		writeThumbnail(toSave, path);
 	}
 
-	public void createAsset(String filePathName, MultipartFile item) throws IOException {
+	public void createAsset(String filePathName, MultipartFile item) throws AssetManagerException, IOException {
 		assert item != null;
 		if (filePathName != null && !"".equals(filePathName)) {
 			String assetName = FilenameUtils.getName(filePathName);
@@ -194,23 +192,11 @@ public class AssetManager implements IAssetManager {
 									inputfile));
 							writeMultipartFile(localAsset, multipartFile, currentFolder.getPath());
 						} else {
-							try {
-								writeFile(localAsset, item, currentFolder.getPath());
-							} catch (Exception e) {
-								throw new IOException("Cannot write/copy DAMAsset file '" + localAsset.getFileName()
-										+ "'");
-							}
+							writeFile(localAsset, item, currentFolder.getPath());
 						}
 						currentFolder.getAssetFiles().add(localAsset);
 						assetMngr.save(localAsset);
-						DAMTag damTag = new DAMTag(localAsset, TITLE_TAG, assetName);
-						localAsset.getAssetTags().add(damTag);
-						tagMngr.save(damTag);
-						damTag = new DAMTag(localAsset, TYPE_TAG, FilenameUtils.getExtension(filePathName));
-						localAsset.getAssetTags().add(damTag);
-						tagMngr.save(damTag);
-						assetMngr.attachDirty(localAsset);
-
+						addDefaultAssetTags(localAsset);
 					} else
 						log.debug(this.currentClientId + ": DAMAsset name '" + assetName
 								+ "' already exists under the folder '" + currentFolder.getName() + "'");
@@ -223,21 +209,46 @@ public class AssetManager implements IAssetManager {
 			log.debug(this.currentClientId + "Invalid File name/path '" + filePathName + "'");
 	}
 
-	private void writeFile(DAMAsset dAMAsset, MultipartFile file, String path) throws Exception {
+	private void writeFile(DAMAsset dAMAsset, MultipartFile file, String path) throws AssetManagerException,
+			IOException {
 		File dir = new File(path);
 		if (!dir.exists()) {
 			// directory MUST exist
-			log.debug(this.currentClientId + ": Directory '" + path + "' does not exist");
+			throw new AssetManagerException(this.currentClientId + ": Directory '" + path + "' does not exist");
 		}
 		File toSave = new File(dir, dAMAsset.getFileName());
 		FileCopyUtils.copy(file.getInputStream(), new FileOutputStream(toSave));
+		writeThumbnail(toSave, path);
 	}
 
-	private void writeMultipartFile(DAMAsset dAMAsset, MultipartFile file, String path) throws IOException {
+	private void addDefaultAssetTags(DAMAsset localAsset) {
+		String fileName = localAsset.getFileName();
+		DAMTag damTag = new DAMTag(localAsset, TITLE_TAG, fileName);
+		localAsset.getAssetTags().add(damTag);
+		tagMngr.save(damTag);
+		damTag = new DAMTag(localAsset, TYPE_TAG, FilenameUtils.getExtension(fileName));
+		localAsset.getAssetTags().add(damTag);
+		tagMngr.save(damTag);
+		assetMngr.attachDirty(localAsset);
+	}
+
+	private void writeThumbnail(File file, String path) throws IOException {
+		if (ImageUtils.isImage(file.getName())) {
+			ImageHelper imager = new ImageHelper();
+			imager.load(file);
+			log.debug("Creating file thumbnail.");
+			// scale and save thumbnail
+			imager.scaleToFit(Constants.THUMBNAIL_DIMENSION);
+			imager.saveBuffer(new File(path, Constants.THUMBNAIL_PREFIX + FilenameUtils.getBaseName(file.getName())));
+		}
+	}
+
+	private void writeMultipartFile(DAMAsset dAMAsset, MultipartFile file, String path) throws AssetManagerException,
+			IOException {
 		File dir = new File(path);
 		if (!dir.exists()) {
 			// directory MUST exist
-			log.debug(this.currentClientId + ": Directory '" + path + "' does not exist");
+			throw new AssetManagerException(this.currentClientId + ": Directory '" + path + "' does not exist");
 		}
 		File outfile = new File(dir, dAMAsset.getFileName());
 
@@ -245,6 +256,7 @@ public class AssetManager implements IAssetManager {
 		try {
 			fos = new FileOutputStream(outfile);
 			IOUtils.copy(file.getInputStream(), fos);
+			writeThumbnail(outfile, path);
 			log.debug(this.currentClientId + ": Uploaded file '" + file.getOriginalFilename() + file.getName()
 					+ "' to '" + outfile.getPath() + "'");
 		} finally {
@@ -252,10 +264,10 @@ public class AssetManager implements IAssetManager {
 		}
 	}
 
-	private boolean moveFile(DAMAsset damAsset, String filePathFrom, String filePathTo) throws IOException {
+	private boolean moveFile(String assetName, String filePathFrom, String filePathTo) throws IOException {
 		boolean del;
-		File infile = new File(filePathFrom, damAsset.getFileName());
-		File outfile = new File(filePathTo, damAsset.getFileName());
+		File infile = new File(filePathFrom, assetName);
+		File outfile = new File(filePathTo, assetName);
 		FileOutputStream fosOut = new FileOutputStream(outfile);
 		FileInputStream fosIn = new FileInputStream(infile);
 		try {
@@ -265,11 +277,9 @@ public class AssetManager implements IAssetManager {
 			IOUtils.closeQuietly(fosOut);
 			del = infile.delete();
 			if (del)
-				log.debug(this.currentClientId + ": Moved file '" + damAsset.getFileName() + "' to '" + filePathTo
-						+ "'");
+				log.debug(this.currentClientId + ": Moved file '" + assetName + "' to '" + filePathTo + "'");
 			else
-				log.debug(this.currentClientId + ": couldn't Move file '" + damAsset.getFileName() + "' to '"
-						+ filePathTo + "'");
+				log.debug(this.currentClientId + ": couldn't Move file '" + assetName + "' to '" + filePathTo + "'");
 		}
 		return del;
 	}
@@ -305,6 +315,9 @@ public class AssetManager implements IAssetManager {
 				File oldFile = new File(path + "/" + oldFileName);
 				// Now invoke the renameTo() method on the reference
 				oldFile.renameTo(new File(path + "/" + newFileName));
+				File thumb = new File(path + "/" + Constants.THUMBNAIL_PREFIX + oldFileName);
+				// Now invoke the renameTo() method on the reference
+				thumb.renameTo(new File(path + "/" + Constants.THUMBNAIL_PREFIX + newFileName));
 				log.debug(this.currentClientId + ": Renamed DAMAsset '" + oldFileName + "' to '" + newFileName + "'");
 			} else
 				log.debug(this.currentClientId + ": DAMAsset '" + oldFileName + "' doesn't exist or '" + newFileName
@@ -340,8 +353,10 @@ public class AssetManager implements IAssetManager {
 				if (!dAMAsset.getFolder().getId().equals(dAMFolder.getId())) {
 					// Another DAMAsset with same name not already there
 					if (findAssetInCurrentFolder(dAMFolder, assetName) == null) {
-						boolean moved = moveFile(dAMAsset, currentFolder.getPath(), dAMFolder.getPath());
-						if (moved) {
+						boolean moved = moveFile(dAMAsset.getFileName(), currentFolder.getPath(), dAMFolder.getPath());
+						boolean movedThumb = moveFile(Constants.THUMBNAIL_PREFIX + dAMAsset.getFileName(), currentFolder.getPath(), dAMFolder
+								.getPath());
+						if (moved && movedThumb) {
 							currentFolder.getAssetFiles().remove(dAMAsset);
 							dAMAsset.setFolder(dAMFolder);
 							dAMFolder.getAssetFiles().add(dAMAsset);
@@ -424,7 +439,7 @@ public class AssetManager implements IAssetManager {
 			deleteAllAssetTags(dAMAsset);
 			currentFolder.getAssetFiles().remove(dAMAsset);
 			assetMngr.delete(dAMAsset);
-			// folderMngr.attachDirty(currentFolder);
+			currentFolder = folderMngr.getFolder(FolderDAO.CLIENT_ID, currentClientId, currentFolder.getId());
 			log.debug(this.currentClientId + ": Deleted  file '" + dAMAsset.getFileName() + "' under folder '"
 					+ currentFolder.getName() + "'");
 		} catch (IOException ioe) {
@@ -660,11 +675,10 @@ public class AssetManager implements IAssetManager {
 		if (dAMFolder != null) {
 			currentFolder = dAMFolder;
 			log.debug(this.currentClientId + ": Moved current folder to '" + dAMFolder.getName() + "' with id=" + id);
-		}
-		else
+		} else
 			// folder was created already here, by somebody else.
 			throw new AssetManagerException("Folder with id = '" + id + "' doesn't exist or has been deleted.");
-			
+
 	}
 
 	/*
@@ -678,8 +692,7 @@ public class AssetManager implements IAssetManager {
 			currentFolder = dAMFolder;
 			log.debug(this.currentClientId + ": Moved current folder to '" + folderName + "' with id="
 					+ dAMFolder.getId());
-		}
-		else
+		} else
 			// folder was created already here, by somebody else.
 			throw new AssetManagerException("Folder '" + folderName + "' doesn't exist or has been deleted.");
 	}
@@ -693,7 +706,7 @@ public class AssetManager implements IAssetManager {
 		// if it's not already the root
 		if (!currentFolder.getName().equals(FolderDAO.ROOTNAME)) {
 			currentFolder = currentFolder.getParentFolder();
-			//if it doesn't have a parent folder then change to root
+			// if it doesn't have a parent folder then change to root
 			if (currentFolder == null)
 				currentFolder = this.getRoot();
 			log.debug(this.currentClientId + ": Moved current folder to '" + currentFolder.getName() + "'");
@@ -739,8 +752,11 @@ public class AssetManager implements IAssetManager {
 			if (folder != null) {
 				DAMFolder dAMFolder = folderMngr.getFolder(FolderDAO.CLIENT_ID, currentClientId, id);
 				if (dAMFolder != null) {
-					if (dAMFolder.getReadOnly().equals(DAMFolder.WRITABLE))
+					if (dAMFolder.getReadOnly().equals(DAMFolder.WRITABLE)) {
 						deleteFolder(currentFolder, dAMFolder);
+						currentFolder = folderMngr.getFolder(FolderDAO.CLIENT_ID, currentClientId, currentFolder
+								.getId());
+					}
 				} else {
 					// discrepancy between hibernate cached stuff and what's in
 					// the DAM db
@@ -762,8 +778,11 @@ public class AssetManager implements IAssetManager {
 			if (folder != null) {
 				DAMFolder dAMFolder = folderMngr.getFolder(FolderDAO.CLIENT_ID, currentClientId, folderName);
 				if (dAMFolder != null) {
-					if (dAMFolder.getReadOnly().equals(DAMFolder.WRITABLE))
+					if (dAMFolder.getReadOnly().equals(DAMFolder.WRITABLE)) {
 						deleteFolder(currentFolder, dAMFolder);
+						currentFolder = folderMngr.getFolder(FolderDAO.CLIENT_ID, currentClientId, currentFolder
+								.getId());
+					}
 				} else {
 					// discrepancy between hibernate cached stuff and what's in
 					// the DAM db
@@ -834,8 +853,10 @@ public class AssetManager implements IAssetManager {
 		File clientDir = new File(path);
 		if (clientDir.exists()) {
 			File file = new File(clientDir, dAMAsset.getFileName());
+			File thumb = new File(clientDir, Constants.THUMBNAIL_PREFIX + file.getName());
 			try {
 				FileUtils.forceDelete(file);
+				FileUtils.forceDelete(thumb);
 			} catch (FileNotFoundException fnfe) {
 				throw new IOException("Tried to delete un-existent DAMAsset file '" + dAMAsset.getFileName() + "'");
 			}
@@ -858,7 +879,7 @@ public class AssetManager implements IAssetManager {
 				} else
 					log.debug(this.currentClientId + ": DAMAsset named '" + assetName
 							+ "' is in Read-Only folder named '" + currentFolder.getName()
-							+ "' and cannot add DAMTags for it");
+							+ "' and cannot add DAMTags to it");
 			} else
 				log.debug(this.currentClientId + ": Invalid DAMAsset name '" + assetName + "'");
 		} else

@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface IAssetManager {
 
 	// Asset CRUDs
-	public abstract void createAsset(String filePathName, MultipartFile item) throws IOException;
+	public abstract void createAsset(String filePathName, MultipartFile item) throws AssetManagerException,IOException;
 
 	public abstract void renameAsset(String oldFileName, String newFileName);
 

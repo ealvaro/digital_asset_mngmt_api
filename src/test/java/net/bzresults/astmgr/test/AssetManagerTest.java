@@ -107,6 +107,8 @@ public class AssetManagerTest extends TestCase {
 			manager.createAsset(inputFileName, null);
 
 			log.warn("Created Asset '" + TESTFILENAME + "'");
+		} catch (AssetManagerException ame) {
+			log.warn(ame.getMessage());
 		} catch (FileNotFoundException fnfe) {
 			log.warn("Cannot find test file '" + inputFileName + "'");
 		} catch (IOException fnfe) {
