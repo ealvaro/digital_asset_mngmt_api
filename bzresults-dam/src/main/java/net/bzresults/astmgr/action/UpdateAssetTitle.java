@@ -32,7 +32,7 @@ public class UpdateAssetTitle implements IDAMAction {
 	public void execute() throws FileUploadException, IOException, Exception {
 		String assetName = request.getParameter("name");
 		String title = request.getParameter("title");
-		am.updateAssetTitle(assetName, title);
+		//am.updateAssetTitle(assetName, title);
 
 	}
 

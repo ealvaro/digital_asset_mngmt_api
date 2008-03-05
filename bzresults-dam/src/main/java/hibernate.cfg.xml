@@ -16,6 +16,7 @@
 	<property name="hbm2ddl.auto">update</property>
 	<property name="connection.driver_class">com.mysql.jdbc.Driver</property>
 	<property name="connection.password"></property>
+	<property name="hibernate.show_sql">true</property>	
 	<mapping resource="net/bzresults/astmgr/model/DAMAsset.hbm.xml" />
 	<mapping resource="net/bzresults/astmgr/model/DAMTag.hbm.xml" />
 	<mapping resource="net/bzresults/astmgr/model/DAMFolder.hbm.xml" />

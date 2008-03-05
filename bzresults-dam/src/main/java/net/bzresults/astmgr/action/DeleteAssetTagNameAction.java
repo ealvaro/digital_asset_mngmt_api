@@ -17,26 +17,22 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class AddAssetTagAction implements IDAMAction {
-	private static final Log logger = LogFactory.getLog(AddAssetTagAction.class);
+public class DeleteAssetTagNameAction implements IDAMAction {
+	private static final Log logger = LogFactory.getLog(DeleteAssetTagNameAction.class);
 
 	private HttpServletRequest request;
 	private AssetManager am;
 
-	public AddAssetTagAction(HttpServletRequest request, AssetManager am) {
+	public DeleteAssetTagNameAction(HttpServletRequest request, AssetManager am) {
 		super();
 		this.request = request;
 		this.am = am;
 	}
 
 	public void execute() throws FileUploadException, IOException, Exception {
-		String assetName = request.getParameter("name");
-		String tagName = request.getParameter("tag");
-		String tagValue = request.getParameter("value");
-		if (tagName == null || tagName.equals(""))
-			am.addAssetTag(assetName, tagValue);
-		else
-			am.addAssetTag(assetName, tagName, tagValue);
+			String assetName = request.getParameter("name");
+			String tagName = request.getParameter("tag");
+			am.deleteAssetTagName(assetName, tagName);
 
 	}
 

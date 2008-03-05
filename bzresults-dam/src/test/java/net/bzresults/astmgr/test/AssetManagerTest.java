@@ -152,23 +152,46 @@ public class AssetManagerTest extends TestCase {
 	public void testAddAssetTag() {
 		manager.addAssetTag(TESTFILENAME, "Make", "Ford");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
-				3);
+				2);
 		manager.addAssetTag(TESTFILENAME, "MODEL", "Escape Hybrid");
+		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
+				3);
+		manager.addAssetTag(TESTFILENAME, "MODEL", "F-150");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
 				4);
 		manager.addAssetTag(TESTFILENAME, "Color", "Black");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
 				5);
+		manager.addAssetTag(TESTFILENAME, "year", "2007");
+		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
+				6);
+		manager.addAssetTag(TESTFILENAME, "awesome");
+		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
+				7);
+		manager.addAssetTag(TESTFILENAME, "cool");
+		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
+				8);
+		assertEquals(tagMngr.findByTagAttrib("GEN").size(),2);
 	}
 
 	/**
 	 * Test method for
-	 * {@link net.bzresults.astmgr.AssetManager#addAssetTag(java.lang.String, java.lang.String, java.lang.String)}.
+	 * {@link net.bzresults.astmgr.AssetManager#deleteAssetTagName(java.lang.String, java.lang.String)}.
 	 */
-	public void testDeleteAssetTag() {
-		manager.deleteAssetTag(TESTFILENAME, "MODEL");
+	public void testDeleteAssetTagName() {
+		manager.deleteAssetTagName(TESTFILENAME, "MODEL");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
-				4);
+				6);
+	}
+
+	/**
+	 * Test method for
+	 * {@link net.bzresults.astmgr.AssetManager#deleteAssetTagValue(java.lang.String, java.lang.String)}.
+	 */
+	public void testDeleteAssetTagValue() {
+		manager.deleteAssetTagValue(TESTFILENAME, "2007");
+		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
+				5);
 	}
 
 	/**
@@ -207,19 +230,30 @@ public class AssetManagerTest extends TestCase {
 
 	/**
 	 * Test method for
+	 * {@link net.bzresults.astmgr.AssetManager#findAssetsByTag(java.lang.String)}.
+	 */
+	public void testFindAssetsByTagValue() {
+
+		manager.findAssetsByTag("cool");
+
+		assertEquals(manager.getCurrentFolder().getAssetFiles().size(), 1);
+	}
+
+	/**
+	 * Test method for
 	 * {@link net.bzresults.astmgr.AssetManager#updateAssetTitle(java.lang.String, java.lang.String)}.
 	 */
-	public void testUpdateAssetTitle() {
-		if (manager.getCurrentFolder().getAssetFiles().isEmpty()) {
-			fail("No Asset to update metadata");
-		} else {
-
-			manager.updateAssetTitle(newFileName, "Changed Title");
-
-			assertEquals(tagMngr.getTagsByAttribValue("TITLE", newFileName).size(), 0);
-			assertEquals(tagMngr.getTagsByAttribValue("TITLE", "Changed Title").size(), 1);
-		}
-	}
+//	public void testUpdateAssetTitle() {
+//		if (manager.getCurrentFolder().getAssetFiles().isEmpty()) {
+//			fail("No Asset to update metadata");
+//		} else {
+//
+//			manager.updateAssetTitle(newFileName, "Changed Title");
+//
+//			assertEquals(tagMngr.getTagsByAttribValue("TITLE", newFileName).size(), 0);
+//			assertEquals(tagMngr.getTagsByAttribValue("TITLE", "Changed Title").size(), 1);
+//		}
+//	}
 
 	/**
 	 * Test method for
@@ -364,6 +398,8 @@ public class AssetManagerTest extends TestCase {
 			}
 
 			assertEquals(assetMngr.findByFileName(newFileName).size(), 0);
+			File f = new File(originalPath);
+			assertTrue(!f.exists());
 		}
 	}
 
@@ -372,8 +408,10 @@ public class AssetManagerTest extends TestCase {
 	 * {@link net.bzresults.astmgr.AssetManager#deleteFolder(java.lang.String)}.
 	 */
 	public void testDeleteFolder() {
+		String originalPath = "";
 		try {
 			manager.changeToFolder("My Images");
+			originalPath = manager.getCurrentFolder().getPath();
 			if (manager.getCurrentFolder().getSubFolders().isEmpty())
 				fail("No folders to delete");
 			else
@@ -383,6 +421,9 @@ public class AssetManagerTest extends TestCase {
 		}
 
 		assertEquals(folderMngr.findByName(localFolderToTest.getName()).size(), 0);
+		File f = new File(originalPath + "/" + localFolderToTest.getName());
+		assertTrue(!f.exists());
+
 	}
 
 }
