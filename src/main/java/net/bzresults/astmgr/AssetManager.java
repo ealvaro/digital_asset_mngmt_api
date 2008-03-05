@@ -223,10 +223,11 @@ public class AssetManager implements IAssetManager {
 
 	private void addDefaultAssetTags(DAMAsset localAsset) {
 		String fileName = localAsset.getFileName();
-		DAMTag damTag = new DAMTag(localAsset, TITLE_TAG, fileName);
-		localAsset.getAssetTags().add(damTag);
-		tagMngr.save(damTag);
-		damTag = new DAMTag(localAsset, TYPE_TAG, FilenameUtils.getExtension(fileName));
+		// Don't add TITLE as an asset tag for now.
+		// DAMTag damTag = new DAMTag(localAsset, TITLE_TAG, fileName);
+		// localAsset.getAssetTags().add(damTag);
+		// tagMngr.save(damTag);
+		DAMTag damTag = new DAMTag(localAsset, TYPE_TAG, FilenameUtils.getExtension(fileName));
 		localAsset.getAssetTags().add(damTag);
 		tagMngr.save(damTag);
 		assetMngr.attachDirty(localAsset);
@@ -327,9 +328,9 @@ public class AssetManager implements IAssetManager {
 					+ "' cannot be renamed inside a Read-Only folder named '" + currentFolder.getName() + "'");
 	}
 
-	private DAMAsset findAssetInCurrentFolder(DAMFolder currentFolder, String fileName) {
-		if (currentFolder.getAssetFiles() != null) {
-			Iterator<DAMAsset> iterator = currentFolder.getAssetFiles().iterator();
+	private DAMAsset findAssetInCurrentFolder(DAMFolder folder, String fileName) {
+		if (folder.getAssetFiles() != null) {
+			Iterator<DAMAsset> iterator = folder.getAssetFiles().iterator();
 			while (iterator.hasNext()) {
 				DAMAsset dAMAsset = iterator.next();
 				if (dAMAsset.getFileName().equalsIgnoreCase(fileName))
@@ -354,8 +355,8 @@ public class AssetManager implements IAssetManager {
 					// Another DAMAsset with same name not already there
 					if (findAssetInCurrentFolder(dAMFolder, assetName) == null) {
 						boolean moved = moveFile(dAMAsset.getFileName(), currentFolder.getPath(), dAMFolder.getPath());
-						boolean movedThumb = moveFile(Constants.THUMBNAIL_PREFIX + dAMAsset.getFileName(), currentFolder.getPath(), dAMFolder
-								.getPath());
+						boolean movedThumb = moveFile(Constants.THUMBNAIL_PREFIX + dAMAsset.getFileName(),
+								currentFolder.getPath(), dAMFolder.getPath());
 						if (moved && movedThumb) {
 							currentFolder.getAssetFiles().remove(dAMAsset);
 							dAMAsset.setFolder(dAMFolder);
@@ -386,12 +387,20 @@ public class AssetManager implements IAssetManager {
 	 * 
 	 * @see net.bzresults.astmgr.IAssetManager#protectAsset(java.lang.String)
 	 */
-	public void protectAsset(String fileName) {
+	public void protectAsset(String fileName) throws IOException {
 		DAMAsset dAMAsset = findAssetInCurrentFolder(currentFolder, fileName);
 		if (dAMAsset != null) {
-			dAMAsset.setReadOnly(DAMAsset.READONLY);
-			assetMngr.attachDirty(dAMAsset);
-			log.debug(this.currentClientId + ": DAMAsset file '" + fileName + "' is now Read-Only.");
+			String path = currentFolder.getPath();
+			File clientDir = new File(path);
+			if (clientDir.exists()) {
+				File file = new File(clientDir, dAMAsset.getFileName());
+				File thumb = new File(clientDir, Constants.THUMBNAIL_PREFIX + file.getName());
+				file.setReadOnly();
+				thumb.setReadOnly();
+				dAMAsset.setReadOnly(DAMAsset.READONLY);
+				assetMngr.attachDirty(dAMAsset);
+				log.debug(this.currentClientId + ": DAMAsset file '" + fileName + "' is now Read-Only.");
+			}
 		}
 	}
 
@@ -400,11 +409,10 @@ public class AssetManager implements IAssetManager {
 	 * 
 	 * @see net.bzresults.astmgr.IAssetManager#updateAssetTitle(java.lang.String,java.lang.String)
 	 */
-	public void updateAssetTitle(String assetName, String strTitle) {
-		deleteAssetTag(assetName, "TITLE");
-		addAssetTag(assetName, "TITLE", strTitle);
-	}
-
+	// public void updateAssetTitle(String assetName, String strTitle) {
+	// deleteAssetTagName(assetName, "TITLE");
+	// addAssetTag(assetName, "TITLE", strTitle);
+	// }
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -439,7 +447,7 @@ public class AssetManager implements IAssetManager {
 			deleteAllAssetTags(dAMAsset);
 			currentFolder.getAssetFiles().remove(dAMAsset);
 			assetMngr.delete(dAMAsset);
-			currentFolder = folderMngr.getFolder(FolderDAO.CLIENT_ID, currentClientId, currentFolder.getId());
+			this.currentFolder = folderMngr.getFolder(FolderDAO.CLIENT_ID, currentClientId, currentFolder.getId());
 			log.debug(this.currentClientId + ": Deleted  file '" + dAMAsset.getFileName() + "' under folder '"
 					+ currentFolder.getName() + "'");
 		} catch (IOException ioe) {
@@ -452,14 +460,18 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#deleteAsset(java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#deleteAssetTagName(java.lang.String,
+	 *      java.lang.String)
 	 */
-	public void deleteAssetTag(String assetName, String tagAttrib) {
+	public void deleteAssetTagName(String assetName, String tagAttrib) {
 		if (!currentFolder.getAssetFiles().isEmpty()) {
 			DAMAsset dAMAsset = findAssetInCurrentFolder(currentFolder, assetName);
 			if (dAMAsset != null) {
-				DAMTag dAMTag = findTag(dAMAsset, tagAttrib);
-				deleteTag(dAMAsset, dAMTag);
+				DAMTag dAMTag = findTagName(dAMAsset, tagAttrib);
+				while (dAMTag != null) {
+					deleteTag(dAMAsset, dAMTag);
+					dAMTag = findTagName(dAMAsset, tagAttrib);
+				}
 				assetMngr.attachDirty(dAMAsset);
 			} else {
 				log.debug(this.currentClientId + ": Asset '" + assetName + "' doesn't exist under folder '"
@@ -467,6 +479,27 @@ public class AssetManager implements IAssetManager {
 			}
 		} else
 			log.debug(this.currentClientId + ": There are no Assets under folder '" + currentFolder.getName() + "'");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.bzresults.astmgr.IAssetManager#deleteAssetTagValue(java.lang.String,
+	 *      java.lang.String)
+	 */
+	public void deleteAssetTagValue(String assetName, String tagValue) {
+		if (!currentFolder.getAssetFiles().isEmpty()) {
+			DAMAsset dAMAsset = findAssetInCurrentFolder(currentFolder, assetName);
+			if (dAMAsset != null) {
+				DAMTag dAMTag = findTagValue(dAMAsset, tagValue);
+				if (dAMTag != null)
+					deleteTag(dAMAsset, dAMTag);
+			}
+			assetMngr.attachDirty(dAMAsset);
+
+		} else
+			log.debug(this.currentClientId + ": There are no Assets under folder '" + currentFolder.getName() + "'");
+
 	}
 
 	private void deleteTag(DAMAsset dAMAsset, DAMTag dAMTag) {
@@ -477,12 +510,24 @@ public class AssetManager implements IAssetManager {
 
 	}
 
-	private DAMTag findTag(DAMAsset dAMAsset, String tagAttrib) {
+	private DAMTag findTagName(DAMAsset dAMAsset, String tagAttrib) {
 		if (dAMAsset.getAssetTags() != null) {
 			Iterator<DAMTag> iterator = dAMAsset.getAssetTags().iterator();
 			while (iterator.hasNext()) {
 				DAMTag dAMTag = iterator.next();
 				if (dAMTag.getTagAttrib().equalsIgnoreCase(tagAttrib))
+					return dAMTag;
+			}
+		}
+		return null;
+	}
+
+	private DAMTag findTagValue(DAMAsset dAMAsset, String tagValue) {
+		if (dAMAsset.getAssetTags() != null) {
+			Iterator<DAMTag> iterator = dAMAsset.getAssetTags().iterator();
+			while (iterator.hasNext()) {
+				DAMTag dAMTag = iterator.next();
+				if (dAMTag.getTagValue().contains(tagValue))
 					return dAMTag;
 			}
 		}
@@ -619,6 +664,8 @@ public class AssetManager implements IAssetManager {
 	public void protectFolder(String folderName) {
 		DAMFolder dAMFolder = findFolderInCurrentFolder(currentFolder, folderName);
 		if (dAMFolder != null) {
+			File file = new File(dAMFolder.getPath());
+			file.setReadOnly();
 			dAMFolder.setReadOnly(DAMFolder.READONLY);
 			folderMngr.attachDirty(dAMFolder);
 			log.debug(this.currentClientId + ": DAMFolder '" + folderName + "' is now Read-Only.");
@@ -863,6 +910,12 @@ public class AssetManager implements IAssetManager {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.bzresults.astmgr.IAssetManager#addAssetTag(java.lang.String,
+	 *      java.lang.String, java.lang.String)
+	 */
 	public void addAssetTag(String assetName, String tagName, String tagValue) {
 		if (tagName != null && !"".equals(tagName) && tagValue != null && !"".equals(tagValue)) {
 			if (assetName != null && !"".equals(assetName)) {
@@ -887,6 +940,22 @@ public class AssetManager implements IAssetManager {
 
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.bzresults.astmgr.IAssetManager#addAssetTag(java.lang.String,
+	 *      java.lang.String)
+	 */
+	public void addAssetTag(String assetName, String tagValue) {
+		addAssetTag(assetName, XMLAssetManager.GENERAL_ASSET_TAG, tagValue);
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.bzresults.astmgr.IAssetManager#findAssetsByName(java.lang.String)
+	 */
 	public void findAssetsByName(String fileName) {
 		if (fileName != null && !"".equals(fileName))
 			currentFolder = createVirtualFolderFromAssetName("Searched Assets", "Assets by 'name'='" + fileName + "'",
@@ -907,10 +976,26 @@ public class AssetManager implements IAssetManager {
 		return virtualFolder;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.bzresults.astmgr.IAssetManager#findAssetsByTag(java.lang.String,
+	 *      java.lang.String)
+	 */
 	public void findAssetsByTag(String tagName, String tagValue) {
 		if (tagName != null && !"".equals(tagName) && tagValue != null && !"".equals(tagValue))
 			currentFolder = createVirtualFolderFromTags("Searched Assets", "Assets by '" + tagName + "'='" + tagValue
 					+ "'", tagName, tagValue);
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.bzresults.astmgr.IAssetManager#findAssetsByTag(java.lang.String)
+	 */
+	public void findAssetsByTag(String tagValue) {
+		findAssetsByTag(XMLAssetManager.GENERAL_ASSET_TAG, tagValue);
 
 	}
 

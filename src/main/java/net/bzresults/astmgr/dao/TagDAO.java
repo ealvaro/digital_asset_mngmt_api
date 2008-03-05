@@ -86,10 +86,10 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public List<DAMTag> getTagsByAttribValue(String attribName, Object attribValue) {
-		log.warn("finding Asset Tags instances with attribute: " + attribName + ", attribute value: " + attribValue);
+		log.warn("finding Asset Tags instances with attribute: " + attribName + ", attribute value like: " + attribValue);
 		try {
 			String queryString = "from DAMTag as model where model." + TAG_ATTRIB + " = '" + attribName
-					+ "' AND model." + TAG_VALUE + "= '" + attribValue + "'";
+					+ "' AND model." + TAG_VALUE + " like  '%" + attribValue + "%'";
 			return getHibernateTemplate().find(queryString);
 		} catch (RuntimeException re) {
 			log.error("find by property " + attribName + " failed", re);

@@ -17,7 +17,10 @@ public class FindAssetsByTagAction implements IDAMAction {
 	public void execute() {
 		String tagName = request.getParameter("tag");
 		String tagValue = request.getParameter("value");
-		am.findAssetsByTag(tagName, tagValue);
+		if (tagName == null || tagName.equals(""))
+			am.findAssetsByTag(tagValue);
+		else
+			am.findAssetsByTag(tagName, tagValue);
 
 	}
 

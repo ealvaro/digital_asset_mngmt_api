@@ -1,5 +1,7 @@
 package net.bzresults.astmgr.services;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -9,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import net.bzresults.astmgr.AllFilesFilter;
 import net.bzresults.astmgr.AssetManager;
 import net.bzresults.astmgr.AssetManagerException;
 import net.bzresults.astmgr.XMLAssetManager;
@@ -18,18 +21,24 @@ import net.bzresults.astmgr.action.ChangeToParentAction;
 import net.bzresults.astmgr.action.CreateAssetAction;
 import net.bzresults.astmgr.action.CreateUserFolderAction;
 import net.bzresults.astmgr.action.DeleteAssetAction;
-import net.bzresults.astmgr.action.DeleteAssetTagAction;
+import net.bzresults.astmgr.action.DeleteAssetTagNameAction;
+import net.bzresults.astmgr.action.DeleteAssetTagValueAction;
 import net.bzresults.astmgr.action.DeleteFolderAction;
 import net.bzresults.astmgr.action.FindAssetsByNameAction;
 import net.bzresults.astmgr.action.FindAssetsByTagAction;
 import net.bzresults.astmgr.action.IDAMAction;
 import net.bzresults.astmgr.action.MoveAssetAction;
 import net.bzresults.astmgr.action.MoveFolderAction;
+import net.bzresults.astmgr.action.ProtectAssetAction;
+import net.bzresults.astmgr.action.ProtectFolderAction;
 import net.bzresults.astmgr.action.QueryFolderAction;
 import net.bzresults.astmgr.action.RenameAssetAction;
-import net.bzresults.astmgr.action.UpdateAssetTitle;
 
 import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
 
 public class AssetManagerServlet extends HttpServlet {
 	private static final long serialVersionUID = -6204882870976083593L;
@@ -39,6 +48,8 @@ public class AssetManagerServlet extends HttpServlet {
 	private static final String ERROR_TAG = "error";
 
 	private static final String MSG_TAG = "msg";
+
+	private static final Log log = LogFactory.getLog(AssetManagerServlet.class);
 
 	/**
 	 * Constructor of the object.
@@ -76,11 +87,14 @@ public class AssetManagerServlet extends HttpServlet {
 		HttpSession session = request.getSession();
 		AssetManager am = (AssetManager) session.getAttribute(AM_PARAM);
 		String strClient = request.getParameter("clientid");
+		String strValve = request.getParameter("valve");
 		String action = request.getParameter("action");
-		if (am == null) {
-			if (strClient == null)
-				strClient = "20";
-			am = createAMSession(session, out, strClient);
+		if (strClient == null || strClient.equals(""))
+			strClient = "20";
+		if (strValve == null || strValve.equals(""))
+			strValve = "V54";
+		if (needToCreateAMSession(am, strClient, strValve)) {
+			am = createAMSession(session, out, strClient, strValve);
 			if (action == null) {
 				XMLAssetManager.sendXMLStructure(out, am.getRoot());
 			}
@@ -102,7 +116,8 @@ public class AssetManagerServlet extends HttpServlet {
 					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:"
 							+ am.getCurrentClientId() + " had an error.");
 				} catch (Exception e) {
-					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error writing uploaded files for clientid:"
+					e.printStackTrace();
+					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error: " + e.getMessage() + " \ncurrent client id: "
 							+ am.getCurrentClientId());
 				}
 			} else
@@ -115,17 +130,30 @@ public class AssetManagerServlet extends HttpServlet {
 		out.close();
 	}
 
-	private AssetManager createAMSession(HttpSession session, PrintWriter out, String strClient) {
+	private boolean needToCreateAMSession(AssetManager am, String client, String valve) {
+		if (am == null)
+			return true;
+		boolean sameClient = am.getCurrentClientId().equals(Long.getLong(client));
+		boolean sameValve = am.getCurrentValveId().equals(valve);
+		return !(sameClient && sameValve);
+	}
+
+	private AssetManager createAMSession(HttpSession session, PrintWriter out, String strClient, String strValve) {
 		AssetManager am = null;
 		long clientId = Long.parseLong(strClient);
-		am = new AssetManager("", clientId);
+		am = new AssetManager(strValve, clientId);
 		session.setAttribute(AM_PARAM, am);
+		log.debug("****** put new am in session build from clientId passed: " + clientId + " and am now has clientId "
+				+ am.getCurrentClientId());
 		return am;
 	}
 
 	private void processAction(HttpServletRequest request, AssetManager am, String action) throws FileUploadException,
 			IOException, Exception, AssetManagerException {
 		IDAMAction damAction = null;
+		if (action.equals("browseBZAssets")) {
+			getBZFolderContents(request.getParameter("currentBZFolder"));
+		}
 		// ?action=createUserFolder&name=testingfolder
 		if (action.equals("createUserFolder")) {
 			damAction = new CreateUserFolderAction(request, am);
@@ -147,12 +175,20 @@ public class AssetManagerServlet extends HttpServlet {
 			damAction = new RenameAssetAction(request, am);
 		} else
 		// ?action=updateAssetTitle&name=My%20Picture.jpg&title=File%20under%20testingfolder
-		if (action.equals("updateAssetTitle")) {
-			damAction = new UpdateAssetTitle(request, am);
-		} else
+		// if (action.equals("updateAssetTitle")) {
+		// damAction = new UpdateAssetTitle(request, am);
+		// } else
 		// ?action=moveAsset&name=My%20Picture.jpg&toname=testingfolder
 		if (action.equals("moveAsset")) {
 			damAction = new MoveAssetAction(request, am);
+		} else
+		// ?action=protectAsset&name=My%20Picture.jpg
+		if (action.equals("protectAsset")) {
+			damAction = new ProtectAssetAction(request, am);
+		} else
+		// ?action=protectFolder&name=test_folder
+		if (action.equals("protectFolder")) {
+			damAction = new ProtectFolderAction(request, am);
 		} else
 		// ?action=deleteFolder&name=testingfolder
 		if (action.equals("deleteFolder")) {
@@ -174,9 +210,13 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("addAssetTag")) {
 			damAction = new AddAssetTagAction(request, am);
 		} else
-		// ?action=deleteAssetTag&name=My%20Picture.jpg&tag=make
-		if (action.equals("deleteAssetTag")) {
-			damAction = new DeleteAssetTagAction(request, am);
+		// ?action=deleteAssetTagName&name=My%20Picture.jpg&tag=make
+		if (action.equals("deleteAssetTagName")) {
+			damAction = new DeleteAssetTagNameAction(request, am);
+		} else
+		// ?action=deleteAssetTagValue&name=My%20Picture.jpg&value=Ford
+		if (action.equals("deleteAssetTagValue")) {
+			damAction = new DeleteAssetTagValueAction(request, am);
 		} else
 		// ?action=findAssetsByName&name=My%20Picture.jpg
 		if (action.equals("findAssetsByName")) {
@@ -188,6 +228,47 @@ public class AssetManagerServlet extends HttpServlet {
 		}
 		if (damAction != null)
 			damAction.execute();
+	}
+
+	public String getBZFolderContents(String folder) {
+		String root = "/var/www/bzwebs/assets/bz";
+		if (folder != null) {
+			folder = root + "/" + folder;
+		} else {
+			folder = root;
+		}
+
+		File folderList = new File(folder);
+
+		FileFilter filter = new AllFilesFilter();
+		File[] listing = folderList.listFiles(filter);
+		org.dom4j.Document dom = org.dom4j.DocumentHelper.createDocument(DocumentHelper.createElement("folder"));
+
+		for (File item : listing) {
+			if (item.isDirectory())
+				dom.getRootElement().add(createFolderElement(item));
+
+			else
+				dom.getRootElement().add(createFileElement(item));
+		}
+
+		return dom.asXML();
+	}
+
+	public Element createFolderElement(File file) {
+		Element element = DocumentHelper.createElement("folder");
+		element.addAttribute("name", file.getName());
+
+		return element;
+
+	}
+
+	public Element createFileElement(File file) {
+		Element element = DocumentHelper.createElement("asset");
+		element.addAttribute("file_name", file.getName());
+
+		return element;
+
 	}
 
 	/**

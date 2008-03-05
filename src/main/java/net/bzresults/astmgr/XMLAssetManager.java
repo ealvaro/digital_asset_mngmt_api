@@ -20,9 +20,10 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 public class XMLAssetManager {
-	private static final String FOLDER_TAG = "folder";
-	private static final String ASSET_TAG = "asset";
-	private static final String ASSETS_TAG = "assets";
+	private static final String FOLDER_HTML_TAG = "folder";
+	private static final String ASSET_HTML_TAG = "asset";
+	private static final String ASSETS_HTML_TAG = "assets";
+	public static final String GENERAL_ASSET_TAG = "GEN";
 
 	public static void sendXMLStructure(PrintWriter out, DAMFolder currentFolder) {
 		StreamResult streamResult = new StreamResult(out);
@@ -61,7 +62,7 @@ public class XMLAssetManager {
 			}
 			createAssetsTag(hd, currentFolder);
 		}
-		hd.endElement("", "", FOLDER_TAG);
+		hd.endElement("", "", FOLDER_HTML_TAG);
 	}
 
 	private static void createFolderTag(TransformerHandler hd, DAMFolder currentFolder) throws SAXException {
@@ -84,7 +85,7 @@ public class XMLAssetManager {
 			atts.addAttribute("", "", "read_only", "CDATA", currentFolder.getReadOnly().toString());
 			atts.addAttribute("", "", "system", "CDATA", currentFolder.getSystem().toString());
 		}
-		hd.startElement("", "", FOLDER_TAG, atts);
+		hd.startElement("", "", FOLDER_HTML_TAG, atts);
 	}
 
 	public static void sendXMLResponse(PrintWriter out, DAMFolder currentFolder) {
@@ -108,11 +109,11 @@ public class XMLAssetManager {
 						// FOLDER tag.
 						if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE)) {
 							createFolderTag(hd, dAMFolder);
-							hd.endElement("", "", FOLDER_TAG);
+							hd.endElement("", "", FOLDER_HTML_TAG);
 						}
 					}
 				// hd.endElement("", "", "subfolders");
-				hd.endElement("", "", FOLDER_TAG);
+				hd.endElement("", "", FOLDER_HTML_TAG);
 				hd.endDocument();
 			} catch (SAXException se) {
 
@@ -127,14 +128,14 @@ public class XMLAssetManager {
 		if (assets.size() > 0)
 			try {
 				// ASSETS tag.
-				hd.startElement("", "", ASSETS_TAG, new AttributesImpl());
+				hd.startElement("", "", ASSETS_HTML_TAG, new AttributesImpl());
 				Iterator assetIterator = assets.iterator();
 				if (assetIterator != null)
 					while (assetIterator.hasNext()) {
 						DAMAsset dAMAsset = (DAMAsset) assetIterator.next();
 						createAssetTag(hd, dAMAsset);
 					}
-				hd.endElement("", "", ASSETS_TAG);
+				hd.endElement("", "", ASSETS_HTML_TAG);
 			} catch (SAXException se) {
 
 			}
@@ -150,19 +151,28 @@ public class XMLAssetManager {
 		atts.addAttribute("", "", "read_only", "CDATA", dAMAsset.getReadOnly().toString());
 		atts.addAttribute("", "", "upload_date", "CDATA", dAMAsset.getUploadDate().toString());
 		atts.addAttribute("", "", "owner_id", "CDATA", dAMAsset.getOwnerId().toString());
+		atts.addAttribute("", "", "path", "CDATA", dAMAsset.getPathAndName());
 		createTags(atts, dAMAsset);
-		hd.startElement("", "", ASSET_TAG, atts);
-		hd.endElement("", "", ASSET_TAG);
+		hd.startElement("", "", ASSET_HTML_TAG, atts);
+		hd.endElement("", "", ASSET_HTML_TAG);
 	}
 
 	private static void createTags(AttributesImpl atts, DAMAsset dAMAsset) {
 		// TAGS as attributes
 		Iterator tagIterator = dAMAsset.getAssetTags().iterator();
-		if (tagIterator != null)
+		if (tagIterator != null) {
+			String strGen = "";
 			while (tagIterator.hasNext()) {
 				DAMTag dAMTag = (DAMTag) tagIterator.next();
-				atts.addAttribute("", "", dAMTag.getTagAttrib(), "CDATA", dAMTag.getTagValue());
+				if (dAMTag.getTagAttrib().equalsIgnoreCase(GENERAL_ASSET_TAG)) {
+					if (!strGen.equals(""))
+						strGen += ",";
+					strGen += dAMTag.getTagValue();
+				} else
+					atts.addAttribute("", "", dAMTag.getTagAttrib(), "CDATA", dAMTag.getTagValue());
 			}
+			atts.addAttribute("", "", GENERAL_ASSET_TAG, "CDATA", strGen);
+		}
 	}
 
 	public static void sendXMLMsg(PrintWriter out, String tagXML, String errorMsg) {
