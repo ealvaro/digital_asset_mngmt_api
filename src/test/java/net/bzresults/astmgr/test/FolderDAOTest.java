@@ -33,7 +33,7 @@ public class FolderDAOTest extends TestCase {
 
 	protected void setUp() throws Exception {
 		super.setUp();
-		localFolderToTest = new DAMFolder(folderMngr.getRoot(FolderDAO.VALVE_ID, VALVEID), "JUnit Test Folder",
+		localFolderToTest = new DAMFolder(folderMngr.getRoot(new Object[] { CLIENTID, VALVEID }), "JUnit Test Folder",
 				"test_folder", "*.jpg,*.gif", VALVEID, CLIENTID, DAMFolder.VISIBLE, DAMFolder.WRITABLE,
 				DAMFolder.NOT_SYSTEM, "/", null, null);
 		folderMngr.save(localFolderToTest);
@@ -45,7 +45,8 @@ public class FolderDAOTest extends TestCase {
 	}
 
 	public void testSave() {
-		// this won't work assertEquals(folderMngr.findById(localFolderToTestSave.getId()),localFolderToTestSave);
+		// this won't work
+		// assertEquals(folderMngr.findById(localFolderToTestSave.getId()),localFolderToTestSave);
 		assertNotNull(folderMngr.findById(localFolderToTest.getId()));
 	}
 
@@ -92,11 +93,7 @@ public class FolderDAOTest extends TestCase {
 	}
 
 	public void testGetRoot() {
-		// ClientId is more important than valveId (folderMngr.VALVE_ID,
-		// VALVEID);
-		// TODO Eventually will have to get the root using both clientid and
-		// valveid.
-		DAMFolder root = folderMngr.getRoot(FolderDAO.CLIENT_ID, CLIENTID);
+		DAMFolder root = folderMngr.getRoot(new Object[] { CLIENTID, VALVEID });
 		log.warn(root);
 		assertNotNull(root);
 		assertEquals(root.getName(), folderMngr.ROOTNAME);

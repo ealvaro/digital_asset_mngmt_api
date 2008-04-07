@@ -157,12 +157,17 @@ public class DAMAsset implements java.io.Serializable {
 		this.ownerId = ownerId;
 	}
 
+	public boolean isOwnedBy (Long ownerId){
+		return this.ownerId.equals(ownerId);
+	}
+	
     /**
      * @hibernate.set
      *   schema = "bzresults"
      *   table = "dam_tags"
      *   lazy = "false"
-     *   cascade = "all"
+     *   inverse="true"
+     *   cascade = "all-delete-orphan"
      * @hibernate.one-to-many class = "net.bzresults.astmgr.model.DAMTag"
      * @hibernate.key column = "ASSET_ID"
      */
@@ -170,14 +175,22 @@ public class DAMAsset implements java.io.Serializable {
 		return assetTags;
 	}
 
-	public void setAssetTags(Set<DAMTag> assetTags) {
+	private void setAssetTags(Set<DAMTag> assetTags) {
 		this.assetTags = assetTags;
 	}
-	
 	public String getPathAndName() {
 		return (folder == null) ? getFileName() : getFolder().getPath() + "/" + getFileName();
 	}
+	
+	public void addTag(DAMTag tag) {
+		tag.setAssetId(this); 
+		assetTags.add(tag);
+	}
 
+	public void removeTag(DAMTag tag) {
+		tag.setAssetId(null);  
+		assetTags.remove(tag); 
+	}
 	@Override
 	public String toString() {
 		return fileName + "  [" + valveId + " : " + uploadDate + " : " + clientId +  " : " + readOnly + "]<--" + (folder != null ? folder.getName() : "null");
