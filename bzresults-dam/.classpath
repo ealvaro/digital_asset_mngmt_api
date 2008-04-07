@@ -12,5 +12,8 @@
 	<classpathentry kind="con" path="melibrary.com.genuitec.eclipse.springframework.MYECLIPSE_SPRING20_WEB"/>
 	<classpathentry kind="lib" path="src/main/webapp/WEB-INF/lib/mysql-connector-java-3.1.14.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/bzresults-utils"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/bzresults-beans"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/bzresults-dao"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/bzresults-dao-hibernate"/>
 	<classpathentry kind="output" path="src/main/webapp/WEB-INF/classes"/>
 </classpath>

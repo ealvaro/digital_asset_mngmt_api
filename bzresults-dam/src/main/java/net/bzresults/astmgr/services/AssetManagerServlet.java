@@ -33,6 +33,8 @@ import net.bzresults.astmgr.action.ProtectAssetAction;
 import net.bzresults.astmgr.action.ProtectFolderAction;
 import net.bzresults.astmgr.action.QueryFolderAction;
 import net.bzresults.astmgr.action.RenameAssetAction;
+import net.bzresults.astmgr.action.UnProtectAssetAction;
+import net.bzresults.astmgr.action.UnProtectFolderAction;
 
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.logging.Log;
@@ -42,14 +44,17 @@ import org.dom4j.Element;
 
 public class AssetManagerServlet extends HttpServlet {
 	private static final long serialVersionUID = -6204882870976083593L;
+	private static final Log log = LogFactory.getLog(AssetManagerServlet.class);
 
 	private static final String AM_PARAM = "am";
 
 	private static final String ERROR_TAG = "error";
-
 	private static final String MSG_TAG = "msg";
 
-	private static final Log log = LogFactory.getLog(AssetManagerServlet.class);
+	public static final String CLIENT_KEY = "client";
+	public static final String VALVE_KEY = "valve";
+	public static final String BCC_USER_KEY = "bccUser";
+	public static final String ACTION_KEY = "action";
 
 	/**
 	 * Constructor of the object.
@@ -86,45 +91,67 @@ public class AssetManagerServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		HttpSession session = request.getSession();
 		AssetManager am = (AssetManager) session.getAttribute(AM_PARAM);
-		String strClient = request.getParameter("clientid");
-		String strValve = request.getParameter("valve");
-		String action = request.getParameter("action");
+		// Client client = (Client) session.getAttribute(CLIENT_KEY);
+		// Valve currentValve = (Valve) session.getAttribute(VALVE_KEY);
+		// ClientUser user = (ClientUser) session.getAttribute(BCC_USER_KEY);
+		// ClientUser user = WebHelper.getBccUser(request.getSession());
+		String strClient = request.getParameter(CLIENT_KEY);
+		String strValve = request.getParameter(VALVE_KEY);
+		String strUser = request.getParameter(BCC_USER_KEY);
+		String action = request.getParameter(ACTION_KEY);
 		if (strClient == null || strClient.equals(""))
-			strClient = "20";
+			if (session.getAttribute(CLIENT_KEY) == null)
+				strClient = "20";
+			else
+				strClient = ((Long) session.getAttribute(CLIENT_KEY)).toString();
 		if (strValve == null || strValve.equals(""))
-			strValve = "V54";
+			if (session.getAttribute(VALVE_KEY) == null)
+				strValve = "V54A";
+			else
+				strValve = (String) session.getAttribute(VALVE_KEY);
+		if (strUser == null || strUser.equals(""))
+			if (session.getAttribute(BCC_USER_KEY) == null)
+				strUser = "1";
+			else
+				strUser = ((Long) session.getAttribute(BCC_USER_KEY)).toString();
+		action = (action == null) ? "" : action;
+		String clientIdDebugStr = strClient;
+		String actionDebugStr = (action == null) ? "null" : action;
+		String amDebugStr = (am == null) ? "am is null at start of request" : am.getCurrentClientId() + " "
+				+ am.getCurrentValveId();
+		String amCurFolderDebugStr = (am == null) ? "am is null" : am.getCurrentFolder().getId() + " "
+				+ am.getCurrentFolder().getName();
+		log.debug("*******************************************************************************"
+				+ "\n IN AssetManagerController handleRequestInternal have:\nsessionId: " + session.getId()
+				+ " isNew: " + session.isNew() + "\n client in session: " + clientIdDebugStr + "\n action: "
+				+ actionDebugStr + "\n am in session: " + amDebugStr + "\n" + amCurFolderDebugStr + "\n\n");
+
 		if (needToCreateAMSession(am, strClient, strValve)) {
-			am = createAMSession(session, out, strClient, strValve);
-			if (action == null) {
-				XMLAssetManager.sendXMLStructure(out, am.getRoot());
-			}
+			am = createAMSession(session, out, strClient, strValve, strUser);
+		}
+		if (action == null || action.equals("")) {
+			XMLAssetManager.sendXMLStructure(out, am.getCurrentFolder());
 		} else {
-			if (action != null) {
-				try {
-					processAction(request, am, action);
-					// http://localhost:8080/damw/servlet/assetmanager?action=closeSession
-					if (action.equals("closeSession")) {
-						XMLAssetManager.sendXMLMsg(out, MSG_TAG, "Session for clientid:" + am.getCurrentClientId()
-								+ " has been closed.");
-						am = null;
-						session.setAttribute(AM_PARAM, am);
-					} else
-						XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder());
-				} catch (AssetManagerException ame) {
-					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
-				} catch (FileUploadException fue) {
-					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:"
-							+ am.getCurrentClientId() + " had an error.");
-				} catch (Exception e) {
-					e.printStackTrace();
-					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error: " + e.getMessage() + " \ncurrent client id: "
-							+ am.getCurrentClientId());
-				}
-			} else
-				XMLAssetManager.sendXMLStructure(out, am.getRoot());
-			// sendXMLMsg(out, ERROR_TAG, "Session for clientid:" +
-			// am.getCurrentClientId()+ " is already created. 'action' parameter
-			// missing.");
+			try {
+				processAction(request, am, action);
+				// http://localhost:8080/damw/servlet/assetmanager?action=closeSession
+				if (action.equals("closeSession")) {
+					XMLAssetManager.sendXMLMsg(out, MSG_TAG, "Session for clientid:" + am.getCurrentClientId()
+							+ " has been closed.");
+					am = null;
+					session.setAttribute(AM_PARAM, am);
+				} else
+					XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder());
+			} catch (AssetManagerException ame) {
+				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
+			} catch (FileUploadException fue) {
+				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:" + am.getCurrentClientId()
+						+ " had an error.");
+			} catch (Exception e) {
+				e.printStackTrace();
+				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error: " + e.getMessage() + " \ncurrent client id: "
+						+ am.getCurrentClientId());
+			}
 		}
 		out.flush();
 		out.close();
@@ -133,18 +160,23 @@ public class AssetManagerServlet extends HttpServlet {
 	private boolean needToCreateAMSession(AssetManager am, String client, String valve) {
 		if (am == null)
 			return true;
-		boolean sameClient = am.getCurrentClientId().equals(Long.getLong(client));
+		boolean sameClient = am.getCurrentClientId().equals(Long.parseLong(client));
 		boolean sameValve = am.getCurrentValveId().equals(valve);
 		return !(sameClient && sameValve);
 	}
 
-	private AssetManager createAMSession(HttpSession session, PrintWriter out, String strClient, String strValve) {
+	private AssetManager createAMSession(HttpSession session, PrintWriter out, String strClient, String strValve,
+			String strUser) {
 		AssetManager am = null;
 		long clientId = Long.parseLong(strClient);
-		am = new AssetManager(strValve, clientId);
+		long cuserId = Long.parseLong(strUser);
+		am = new AssetManager(strValve, clientId, cuserId);
 		session.setAttribute(AM_PARAM, am);
-		log.debug("****** put new am in session build from clientId passed: " + clientId + " and am now has clientId "
-				+ am.getCurrentClientId());
+		session.setAttribute(CLIENT_KEY, clientId);
+		session.setAttribute(VALVE_KEY, strValve);
+		session.setAttribute(BCC_USER_KEY, cuserId);
+		log.debug("****** put new am in session with clientId : " + am.getCurrentClientId() + " valveId : "
+				+ am.getCurrentValveId());
 		return am;
 	}
 
@@ -186,9 +218,17 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("protectAsset")) {
 			damAction = new ProtectAssetAction(request, am);
 		} else
+		// ?action=unprotectAsset&name=My%20Picture.jpg
+		if (action.equals("unprotectAsset")) {
+			damAction = new UnProtectAssetAction(request, am);
+		} else
 		// ?action=protectFolder&name=test_folder
 		if (action.equals("protectFolder")) {
 			damAction = new ProtectFolderAction(request, am);
+		} else
+		// ?action=unprotectFolder&name=test_folder
+		if (action.equals("unprotectFolder")) {
+			damAction = new UnProtectFolderAction(request, am);
 		} else
 		// ?action=deleteFolder&name=testingfolder
 		if (action.equals("deleteFolder")) {
@@ -294,7 +334,7 @@ public class AssetManagerServlet extends HttpServlet {
 	 * Initialization of the servlet. <br>
 	 * 
 	 * @throws ServletException
-	 *             if an error occure
+	 *             if an error occur
 	 */
 	public void init() throws ServletException {
 		// Put your code here

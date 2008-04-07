@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+import junit.framework.TestCase;
 import net.bzresults.astmgr.dao.AssetDAO;
 import net.bzresults.astmgr.dao.FolderDAO;
 import net.bzresults.astmgr.model.DAMAsset;
@@ -16,11 +17,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import junit.framework.TestCase;
-
 /**
  * @author escobara
- *
+ * 
  */
 public class AssetDAOTest extends TestCase {
 	private static final Log log = LogFactory.getLog(AssetDAOTest.class);
@@ -52,12 +51,12 @@ public class AssetDAOTest extends TestCase {
 
 	protected void setUp() throws Exception {
 		super.setUp();
-		localFolderToTest = new DAMFolder(folderMngr.getRoot(FolderDAO.VALVE_ID, VALVEID), "JUnit Test Folder",
+		localFolderToTest = new DAMFolder(folderMngr.getRoot(new Object[] { CLIENTID, VALVEID }), "JUnit Test Folder",
 				"test_folder", "*.jpg,*.gif", VALVEID, CLIENTID, DAMFolder.VISIBLE, DAMFolder.WRITABLE,
 				DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0), new HashSet<DAMFolder>(0));
 		folderMngr.save(localFolderToTest);
-		localAssetToTest = new DAMAsset(localFolderToTest, TESTFILENAME, VALVEID,
-				new Date(System.currentTimeMillis()), CLIENTID, DAMAsset.WRITABLE, CLIENTID);
+		localAssetToTest = new DAMAsset(localFolderToTest, TESTFILENAME, VALVEID, new Date(System.currentTimeMillis()),
+				CLIENTID, DAMAsset.WRITABLE, CLIENTID);
 		assetMngr.save(localAssetToTest);
 	}
 

@@ -29,7 +29,7 @@
         <property name="ownerId" type="java.lang.Long">
             <column name="OWNER_ID" not-null="true" />
         </property>
-	    <set cascade="all" schema="bzresults" lazy="false" table="dam_tags" name="assetTags">
+    <set inverse="true" cascade="all-delete-orphan" schema="bzresults" lazy="false" table="dam_tags" name="assetTags">
 	      <key column="ASSET_ID"/>
 	      <one-to-many class="net.bzresults.astmgr.model.DAMTag"/>
 	    </set>

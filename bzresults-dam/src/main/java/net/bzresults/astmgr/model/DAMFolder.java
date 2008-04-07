@@ -64,8 +64,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.system = system;
 		this.createDate = new Date(System.currentTimeMillis());;
 		this.path = path;
-		this.assetFiles = assetFiles;
-		this.subFolders = subFolders;
+		if(assetFiles != null) // don't want to set it null when our intial state is an empty set!
+			this.assetFiles = assetFiles;
+		if(subFolders != null)
+			this.subFolders = subFolders;
 	}
 
 	// Property accessors
@@ -222,7 +224,9 @@ public class DAMFolder implements java.io.Serializable {
      *   schema = "bzresults"
      *   table = "dam_assets"
      *   lazy = "false"
-     *   cascade = "all"
+     *   cascade = "all-delete-orphan"
+     *   inverse="true"
+     *   access="field"
      * @hibernate.one-to-many class = "net.bzresults.astmgr.model.DAMAsset"
      * @hibernate.key column = "FOLDER_ID"
      */
@@ -231,7 +235,19 @@ public class DAMFolder implements java.io.Serializable {
 	}
 
 	public void setAssetFiles(Set<DAMAsset> assetFiles) {
-		this.assetFiles = assetFiles;
+		this.assetFiles.clear();
+		if(assetFiles != null)
+			this.assetFiles.addAll(assetFiles);
+	}
+	
+	public void addAsset(DAMAsset damAsset) {
+		damAsset.setFolder(this);
+		this.assetFiles.add(damAsset);
+	}
+	
+	public void removeAsset(DAMAsset damAsset) {
+		damAsset.setFolder(null);
+		this.assetFiles.remove(damAsset);
 	}
 
     /**
@@ -239,7 +255,8 @@ public class DAMFolder implements java.io.Serializable {
      *   schema = "bzresults"
      *   table = "dam_folders"
      *   lazy = "false"
-     *   cascade = "all"
+     *   cascade = "all-delete-orphan"
+     *   inverse="true"
      * @hibernate.one-to-many class = "net.bzresults.astmgr.model.DAMFolder"
      * @hibernate.key column = "PARENTFOLDER_ID"
      */
@@ -247,10 +264,19 @@ public class DAMFolder implements java.io.Serializable {
 		return subFolders;
 	}
 
-	public void setSubFolders(Set<DAMFolder> subFolders) {
+	private void setSubFolders(Set<DAMFolder> subFolders) {
 		this.subFolders = subFolders;
 	}
 
+	public void addSubFolder(DAMFolder damFolder) {
+		damFolder.setParentFolder(this);
+		this.subFolders.add(damFolder);
+	}
+	
+	public void removeSubFolder(DAMFolder damFolder) {
+		damFolder.setParentFolder(null);
+		this.subFolders.remove(damFolder);
+	}
 	@Override
 	public String toString() {
 		return "parent -->" + (parentFolder != null ? parentFolder.getName() : "null ") + "<p>attributes -->" + name

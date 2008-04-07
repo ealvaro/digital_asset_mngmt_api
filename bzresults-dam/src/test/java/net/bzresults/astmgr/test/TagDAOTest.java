@@ -68,7 +68,7 @@ public class TagDAOTest extends TestCase {
 	 */
 	protected void setUp() throws Exception {
 		super.setUp();
-		localFolderToTest = new DAMFolder(folderMngr.getRoot(FolderDAO.VALVE_ID, VALVEID), "JUnit Test Folder",
+		localFolderToTest = new DAMFolder(folderMngr.getRoot(new Object[] { CLIENTID, VALVEID }), "JUnit Test Folder",
 				"test_folder", "*.jpg,*.gif", VALVEID, CLIENTID, DAMFolder.VISIBLE, DAMFolder.WRITABLE,
 				DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0), new HashSet<DAMFolder>(0));
 		folderMngr.save(localFolderToTest);
@@ -124,7 +124,7 @@ public class TagDAOTest extends TestCase {
 	 * {@link net.bzresults.astmgr.dao.TagDAO#findByExample(net.bzresults.astmgr.model.DAMTag)}.
 	 */
 	public void testFindByExample() {
-		List <DAMTag> tagList = tagMngr.findByExample(localTagToTest);
+		List<DAMTag> tagList = tagMngr.findByExample(localTagToTest);
 		assertEquals(tagList.size(), 1);
 	}
 
@@ -133,7 +133,7 @@ public class TagDAOTest extends TestCase {
 	 * {@link net.bzresults.astmgr.dao.TagDAO#findByProperty(java.lang.String, java.lang.Object)}.
 	 */
 	public void testFindByProperty() {
-		List <DAMTag> tagList = tagMngr.findByProperty(TagDAO.TAG_ATTRIB, localTagToTest.getTagAttrib());
+		List<DAMTag> tagList = tagMngr.findByProperty(TagDAO.TAG_ATTRIB, localTagToTest.getTagAttrib());
 		assertNotNull(tagList);
 	}
 
@@ -142,7 +142,7 @@ public class TagDAOTest extends TestCase {
 	 * {@link net.bzresults.astmgr.dao.TagDAO#findByTagAttrib(java.lang.Object)}.
 	 */
 	public void testFindByTagAttrib() {
-		List <DAMTag> tagList = tagMngr.findByTagAttrib(localTagToTest.getTagAttrib());
+		List<DAMTag> tagList = tagMngr.findByTagAttrib(localTagToTest.getTagAttrib());
 		assertNotNull(tagList);
 	}
 
@@ -151,7 +151,7 @@ public class TagDAOTest extends TestCase {
 	 * {@link net.bzresults.astmgr.dao.TagDAO#findByTagValue(java.lang.Object)}.
 	 */
 	public void testFindByTagValue() {
-		List <DAMTag> tagList = tagMngr.findByTagValue(localTagToTest.getTagValue());
+		List<DAMTag> tagList = tagMngr.findByTagValue(localTagToTest.getTagValue());
 		assertNotNull(tagList);
 		assertEquals(tagList.size(), 1);
 	}
@@ -160,7 +160,7 @@ public class TagDAOTest extends TestCase {
 	 * Test method for {@link net.bzresults.astmgr.dao.TagDAO#findAll()}.
 	 */
 	public void testFindAll() {
-		List <DAMTag> tagList = tagMngr.findAll();
+		List<DAMTag> tagList = tagMngr.findAll();
 		assertNotNull(tagList);
 	}
 

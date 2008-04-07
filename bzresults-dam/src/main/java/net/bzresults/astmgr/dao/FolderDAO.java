@@ -20,7 +20,7 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 public class FolderDAO extends HibernateDaoSupport {
 	private static final Log log = LogFactory.getLog(FolderDAO.class);
-	// property constants
+	// folder constants
 	public static final String ID = "id";
 	public static final String DESCRIPTION = "description";
 	public static final String NAME = "name";
@@ -32,17 +32,21 @@ public class FolderDAO extends HibernateDaoSupport {
 	public static final String SYSTEM = "system";
 	public static final String CREATE_DATE = "createDate";
 	public static final String PATH = "path";
+	// property constants
 	public static final String ROOTNAME = "ROOT";
+	public static final String SHAREDNAME = "Shared Assets";
+	public static final String ALL_VALVES = "*";
+	private static final String[] CRITERIA_PARAMS = {FolderDAO.CLIENT_ID,FolderDAO.VALVE_ID};
 
 	protected void initDao() {
 		// do nothing
 	}
 
 	public void save(DAMFolder transientInstance) {
-		log.warn("saving DAMFolder instance");
+		log.debug("saving DAMFolder instance");
 		try {
 			getHibernateTemplate().save(transientInstance);
-			log.warn("save successful");
+			log.debug("save successful");
 		} catch (RuntimeException re) {
 			log.error("save failed", re);
 			throw re;
@@ -50,10 +54,10 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public void delete(DAMFolder persistentInstance) {
-		log.warn("deleting DAMFolder instance");
+		log.debug("deleting DAMFolder instance");
 		try {
 			getHibernateTemplate().delete(persistentInstance);
-			log.warn("delete successful");
+			log.debug("delete successful");
 		} catch (RuntimeException re) {
 			log.error("delete failed", re);
 			throw re;
@@ -61,7 +65,7 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public DAMFolder findById(java.lang.Long id) {
-		log.warn("getting DAMFolder instance with id: " + id);
+		log.debug("getting DAMFolder instance with id: " + id);
 		try {
 			DAMFolder instance = (DAMFolder) getHibernateTemplate().get("net.bzresults.astmgr.model.DAMFolder", id);
 			return instance;
@@ -72,10 +76,10 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public List findByExample(DAMFolder instance) {
-		log.warn("finding DAMFolder instance by example");
+		log.debug("finding DAMFolder instance by example");
 		try {
 			List results = getHibernateTemplate().findByExample(instance);
-			log.warn("find by example successful, result size: " + results.size());
+			log.debug("find by example successful, result size: " + results.size());
 			return results;
 		} catch (RuntimeException re) {
 			log.error("find by example failed", re);
@@ -83,8 +87,15 @@ public class FolderDAO extends HibernateDaoSupport {
 		}
 	}
 
+	/**
+	 * 
+	 * @param propertyName
+	 * @param value
+	 * @return
+	 */
+	//TODO this method is not safe to call unless clientid and valveid are included in the query.
 	public List findByProperty(String propertyName, Object value) {
-		log.warn("finding DAMFolder instance with property: " + propertyName + ", value: " + value);
+		log.debug("finding DAMFolder instance with property: " + propertyName + ", value: " + value);
 		try {
 			String queryString = "from DAMFolder as model where model." + propertyName + "= ?";
 			return getHibernateTemplate().find(queryString, value);
@@ -94,19 +105,22 @@ public class FolderDAO extends HibernateDaoSupport {
 		}
 	}
 
-	public DAMFolder getRoot(String propertyName, Object value) {
-		return getFolder(propertyName, value, FolderDAO.ROOTNAME);
+	public DAMFolder getRoot(Object[] values) {
+		return getFolder(values, FolderDAO.ROOTNAME);
 	}
 
-	public DAMFolder getFolder(String propertyName, Object value, java.lang.Long id) {
-		log.warn("finding Folder with id = " + id + " instance with property: " + propertyName + ", value: " + value);
+	public DAMFolder getFolder(Object[] values, java.lang.Long id) {
+		log.warn("finding Folder instance with  " + FolderDAO.ID + "=" + id.toString());
 		try {
-			String queryString = "from DAMFolder as model where model." + propertyName + "= ? AND model."
-					+ FolderDAO.ID + "='" + id + "'";
+			String queryString = "from DAMFolder as model where " + 
+			"model." + CRITERIA_PARAMS[0] + " = "+ values[0] +
+			" AND model." + CRITERIA_PARAMS[1] + "= '" + values[1] + "'" + 
+			" AND model." + FolderDAO.ID + "='" + id + "'";
 			// There should only be one folder with that id.
-			return (DAMFolder) getHibernateTemplate().find(queryString, value).get(0);
+			// I know there is a find() method with value[] as parameter but this way was faster
+			return (DAMFolder) getHibernateTemplate().find(queryString).get(0); 
 		} catch (IndexOutOfBoundsException ioobe) {
-			log.error("find folder: " + propertyName + "='" + value + "' & " + FolderDAO.ID + "='" + id + "' failed");
+			log.error("find folder: " + CRITERIA_PARAMS[0] + "='" + values[0] +  "' & " + FolderDAO.ID + "='" + id + "' failed");
 			return null;
 		} catch (RuntimeException re) {
 			log.error("find by property name failed", re);
@@ -114,20 +128,19 @@ public class FolderDAO extends HibernateDaoSupport {
 		}
 	}
 
-	public DAMFolder getFolder(String propertyName, Object value, String folderName) {
-		log.warn("finding " + folderName + " Folder instance with property: " + propertyName + ", value: " + value);
+	public DAMFolder getFolder(Object[] values, String folderName) {
+		log.warn("finding Folder instance with  " + FolderDAO.NAME + "=" + folderName);
+		if (folderName.equals(FolderDAO.ROOTNAME)) values[1] = ALL_VALVES;
 		try {
-			String queryString = "from DAMFolder as model where model." + propertyName + "= ? AND model."
-					+ FolderDAO.NAME + "='" + folderName + "'";
-			// TODO handle situation when there is more than one folder with
-			// same name at different hierarchy levels (return the correct one).
-			// There should only be one folder with that name, and if there is
-			// more than one the first one will be returned.
-			// If a unique one is needed call the other getFolder function with
-			// id parameter.
-			return (DAMFolder) getHibernateTemplate().find(queryString, value).get(0);
+			String queryString = "from DAMFolder as model where " + 
+			"model." + CRITERIA_PARAMS[0] + " = "+ values[0] +
+			" AND model." + CRITERIA_PARAMS[1] + "= '" + values[1] + 
+			"' AND model."	+ FolderDAO.NAME + "='" + folderName + "'";
+			// If a unique one is needed call the other getFolder function with id parameter.
+			// I know there is a find() method with value[] as parameter but this way was faster
+			return (DAMFolder) getHibernateTemplate().find(queryString).get(0);
 		} catch (IndexOutOfBoundsException ioobe) {
-			log.error("find folder: " + propertyName + "='" + value + "' & " + FolderDAO.NAME + "='" + folderName
+			log.error("find folder: " + CRITERIA_PARAMS[0] + "='" + values[0] + "' & " + FolderDAO.NAME + "='" + folderName
 					+ "' failed");
 			return null;
 		} catch (RuntimeException re) {
@@ -177,7 +190,7 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public List findAll() {
-		log.warn("finding all DAMFolder instances");
+		log.debug("finding all DAMFolder instances");
 		try {
 			String queryString = "from DAMFolder";
 			return getHibernateTemplate().find(queryString);
@@ -188,10 +201,10 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public DAMFolder merge(DAMFolder detachedInstance) {
-		log.warn("merging DAMFolder instance");
+		log.debug("merging DAMFolder instance");
 		try {
 			DAMFolder result = (DAMFolder) getHibernateTemplate().merge(detachedInstance);
-			log.warn("merge successful");
+			log.debug("merge successful");
 			return result;
 		} catch (RuntimeException re) {
 			log.error("merge failed", re);
@@ -200,10 +213,10 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public void attachDirty(DAMFolder instance) {
-		log.warn("attaching dirty DAMFolder instance");
+		log.debug("attaching dirty DAMFolder instance");
 		try {
 			getHibernateTemplate().saveOrUpdate(instance);
-			log.warn("attach successful");
+			log.debug("attach successful");
 		} catch (RuntimeException re) {
 			log.error("attach failed", re);
 			throw re;
@@ -211,10 +224,10 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public void attachClean(DAMFolder instance) {
-		log.warn("attaching clean DAMFolder instance");
+		log.debug("attaching clean DAMFolder instance");
 		try {
 			getHibernateTemplate().lock(instance, LockMode.NONE);
-			log.warn("attach successful");
+			log.debug("attach successful");
 		} catch (RuntimeException re) {
 			log.error("attach failed", re);
 			throw re;

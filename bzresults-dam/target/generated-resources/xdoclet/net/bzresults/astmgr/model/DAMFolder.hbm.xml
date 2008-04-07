@@ -22,7 +22,6 @@
         <property name="hidden" type="java.lang.Byte">
             <column name="HIDDEN" />
         </property>
-	    <many-to-one column="PARENTFOLDER_ID" class="net.bzresults.astmgr.model.DAMFolder" name="parentFolder"/>
         <property name="readOnly" type="java.lang.Byte">
             <column name="READ_ONLY" />
         </property>
@@ -41,11 +40,12 @@
         <property name="path" type="java.lang.String">
             <column name="PATH" length="200" not-null="true" />
         </property>
-	    <set cascade="all" schema="bzresults" lazy="false" table="dam_assets" name="assetFiles">
+    <many-to-one column="PARENTFOLDER_ID" class="net.bzresults.astmgr.model.DAMFolder" name="parentFolder"/>
+    <set inverse="true" cascade="all-delete-orphan" access="field" schema="bzresults" lazy="false" table="dam_assets" name="assetFiles">
 	      <key column="FOLDER_ID"/>
 	      <one-to-many class="net.bzresults.astmgr.model.DAMAsset"/>
 	    </set>
-	    <set cascade="all" schema="bzresults" lazy="false" table="dam_folders" name="subFolders">
+    <set inverse="true" cascade="all-delete-orphan" schema="bzresults" lazy="false" table="dam_folders" name="subFolders">
 	      <key column="PARENTFOLDER_ID"/>
 	      <one-to-many class="net.bzresults.astmgr.model.DAMFolder"/>
 	    </set>
