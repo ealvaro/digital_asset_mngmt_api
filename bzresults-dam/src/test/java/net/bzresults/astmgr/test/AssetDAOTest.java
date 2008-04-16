@@ -83,50 +83,42 @@ public class AssetDAOTest extends TestCase {
 
 	public void testFindByExample() {
 		List<DAMAsset> assets = assetMngr.findByExample(localAssetToTest);
-		log.warn(assets);
 		assertNotNull(assets);
 	}
 
 	public void testFindByProperty() {
 		List assets = assetMngr.findByProperty(AssetDAO.FILE_NAME, localAssetToTest.getFileName());
-		log.warn(assets);
 		assertNotNull(assets);
 	}
 
 	public void testFindByValveId() {
 		List assets = assetMngr.findByValveId(localAssetToTest.getValveId());
-		log.warn(assets);
 		assertNotNull(assets);
 	}
 
 	public void testFindByCreateDate() {
 		List assets = assetMngr.findByUploadDate(localAssetToTest.getUploadDate());
-		log.warn(assets);
 		assertNotNull(assets);
 	}
 
 	public void testFindByClientId() {
 		List assets = assetMngr.findByClientId(localAssetToTest.getClientId());
-		log.warn(assets);
 		assertNotNull(assets);
 	}
 
 	public void testGetRecentItems() {
-		List assets = assetMngr.getRecentItems(AssetDAO.CLIENT_ID, localAssetToTest.getClientId(), new Date(System
+		List assets = assetMngr.getRecentItems(new Object[] { CLIENTID, VALVEID }, new Date(System
 				.currentTimeMillis()));
-		log.warn(assets);
 		assertNotNull(assets);
 	}
 
 	public void testFindReadOnly() {
 		List assets = assetMngr.findByReadOnly(localAssetToTest.getReadOnly());
-		log.warn(assets);
 		assertNotNull(assets);
 	}
 
 	public void testFindAll() {
 		List allAssets = assetMngr.findAll();
-		log.warn(allAssets);
 		assertNotNull(allAssets);
 	}
 

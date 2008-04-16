@@ -20,9 +20,6 @@ public class DeleteFolderAction implements IDAMAction {
 		if (!(strFolderID == null)) {
 			Long folderID = Long.parseLong(strFolderID);
 			am.deleteFolder(folderID);
-		} else {
-			String folderName = request.getParameter("name");
-			am.deleteFolder(folderName);
 		}
 	}
 }

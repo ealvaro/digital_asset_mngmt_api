@@ -98,31 +98,48 @@
       return false;
     }   
     
+    function doMoveToFolderCall(f)
+    {
+      var moveFolderId = f.moveFolderId.value;
+      var moveToFolderId = f.moveToFolderId.value;
+      var params = "id="+moveFolderId+"&toid="+moveToFolderId;
+      doIt('moveFolder',params)
+      return false;
+    }
+    
     function doChangeToFolderCall(f)
     {
-      var folderName = f.changeToFolderName.value;
       var folderId = f.changeToFolderId.value;
       var params = null;
-      if (folderName == "")
-      		params = "id="+folderId;
-      else
-            params = "name="+folderName;
-      
+      params = "id="+folderId;
       doIt('changeToFolder',params)
       return false;
     }   
     
     function doDeleteFolderCall(f)
     {
-      var folderName = f.deleteFolderName.value;
       var folderId = f.deleteFolderId.value;
       var params = null;
-      if (folderName == "")
-      		params = "id="+folderId;
-      else
-            params = "name="+folderName;
-      
+      params = "id="+folderId;
       doIt('deleteFolder',params)
+      return false;
+    }   
+    
+    function doProtectFolderCall(f)
+    {
+      var folderId = f.protectFolderId.value;
+      var params = null;
+      params = "id="+folderId;
+      doIt('protectFolder',params)
+      return false;
+    }   
+    
+    function doUnProtectFolderCall(f)
+    {
+      var folderId = f.unProtectFolderId.value;
+      var params = null;
+      params = "id="+folderId;
+      doIt('unprotectFolder',params)
       return false;
     }   
     
@@ -151,12 +168,30 @@
       return false;
     }
     
-    function doMoveToFolderCall(f)
+    function doProtectAssetCall(f)
     {
-      var moveFolderName = f.moveFolderName.value;
-      var moveToFolderName = f.moveToFolderName.value;
-      var params = "name="+moveFolderName+"&toname="+moveToFolderName;
-      doIt('moveFolder',params)
+      var protectAssetName = f.protectAssetName.value;
+      var params = null;
+      params = "name="+protectAssetName;
+      doIt('protectAsset',params)
+      return false;
+    }   
+    
+    function doUnProtectAssetCall(f)
+    {
+      var unProtectAssetName = f.unProtectAssetName.value;
+      var params = null;
+      params = "name="+unProtectAssetName;
+      doIt('unprotectAsset',params)
+      return false;
+    }   
+    
+    function doMoveAssetToFolderCall(f)
+    {
+      var moveAssetName = f.moveAssetName.value;
+      var moveToFolderId = f.moveToFolderId.value;
+      var params = "name="+moveAssetName+"&id="+moveToFolderId;
+      doIt('moveAsset',params)
       return false;
     }
     

@@ -25,7 +25,7 @@ public class XMLAssetManager {
 	private static final String ASSETS_HTML_TAG = "assets";
 	public static final String GENERAL_ASSET_TAG = "GEN";
 
-	public static void sendXMLStructure(PrintWriter out, DAMFolder currentFolder) {
+	public static void sendXMLStructure(PrintWriter out, DAMFolder currentFolder, String valveid) {
 		StreamResult streamResult = new StreamResult(out);
 		SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
 		// SAX2.0 ContentHandler.
@@ -37,7 +37,7 @@ public class XMLAssetManager {
 			hd.setResult(streamResult);
 			try {
 				hd.startDocument();
-				createXMLFolderHierarchy(hd, currentFolder);
+				createXMLFolderHierarchy(hd, currentFolder, valveid);
 				hd.endDocument();
 			} catch (SAXException se) {
 			}
@@ -50,15 +50,16 @@ public class XMLAssetManager {
 	 * @param currentFolder
 	 * @throws SAXException
 	 */
-	private static void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder) throws SAXException {
+	private static void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder, String valveid)
+			throws SAXException {
 		createFolderTag(hd, currentFolder);
 		if (currentFolder != null) {
 			Iterator folderIterator = currentFolder.getSubFolders().iterator();
 			while (folderIterator.hasNext()) {
 				DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
 				// FOLDER tag.
-				if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE))
-					createXMLFolderHierarchy(hd, dAMFolder);
+				if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE) && dAMFolder.getValveId().equals(valveid))
+					createXMLFolderHierarchy(hd, dAMFolder, valveid);
 			}
 			createAssetsTag(hd, currentFolder);
 		}
@@ -88,7 +89,7 @@ public class XMLAssetManager {
 		hd.startElement("", "", FOLDER_HTML_TAG, atts);
 	}
 
-	public static void sendXMLResponse(PrintWriter out, DAMFolder currentFolder) {
+	public static void sendXMLResponse(PrintWriter out, DAMFolder currentFolder, String valveid) {
 		StreamResult streamResult = new StreamResult(out);
 		SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
 		// SAX2.0 ContentHandler.
@@ -107,7 +108,7 @@ public class XMLAssetManager {
 					while (folderIterator.hasNext()) {
 						DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
 						// FOLDER tag.
-						if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE)) {
+						if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE) && dAMFolder.getValveId().equals(valveid)) {
 							createFolderTag(hd, dAMFolder);
 							hd.endElement("", "", FOLDER_HTML_TAG);
 						}

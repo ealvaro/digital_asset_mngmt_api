@@ -19,10 +19,8 @@ public class UnProtectFolderAction implements IDAMAction {
 	}
 
 	public void execute() throws FileUploadException, IOException, Exception {
-		String folderName = request.getParameter("name");
-		if (folderName != null)
-			am.unProtectFolder(folderName);
-
+		Long folderId = Long.valueOf(request.getParameter("id"));
+		am.unProtectFolder(folderId);
 	}
 
 }

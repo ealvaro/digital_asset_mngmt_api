@@ -24,7 +24,8 @@ public class DAMAsset implements java.io.Serializable {
 	private Long clientId;
 	private Byte readOnly;
 	private Long ownerId;
-	private Set<DAMTag> assetTags = new HashSet<DAMTag>(0);
+	// it bothers waltonl having HashSets initialized to an initialCapacity of 0
+	private Set<DAMTag> assetTags = new HashSet<DAMTag>(16);
 
 	// Constructors
 
