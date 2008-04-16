@@ -14,6 +14,7 @@ import javax.servlet.http.HttpSession;
 import net.bzresults.astmgr.AllFilesFilter;
 import net.bzresults.astmgr.AssetManager;
 import net.bzresults.astmgr.AssetManagerException;
+import net.bzresults.astmgr.Constants;
 import net.bzresults.astmgr.XMLAssetManager;
 import net.bzresults.astmgr.action.AddAssetTagAction;
 import net.bzresults.astmgr.action.ChangeToFolderAction;
@@ -51,11 +52,6 @@ public class AssetManagerServlet extends HttpServlet {
 	private static final String ERROR_TAG = "error";
 	private static final String MSG_TAG = "msg";
 
-	public static final String CLIENT_KEY = "client";
-	public static final String VALVE_KEY = "valve";
-	public static final String BCC_USER_KEY = "bccUser";
-	public static final String ACTION_KEY = "action";
-
 	/**
 	 * Constructor of the object.
 	 */
@@ -91,29 +87,29 @@ public class AssetManagerServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		HttpSession session = request.getSession();
 		AssetManager am = (AssetManager) session.getAttribute(AM_PARAM);
-		// Client client = (Client) session.getAttribute(CLIENT_KEY);
-		// Valve currentValve = (Valve) session.getAttribute(VALVE_KEY);
-		// ClientUser user = (ClientUser) session.getAttribute(BCC_USER_KEY);
+		// Client client = (Client) session.getAttribute(Constants.CLIENT_KEY);
+		// Valve currentValve = (Valve) session.getAttribute(Constants.VALVE_KEY);
+		// ClientUser user = (ClientUser) session.getAttribute(Constants.BCC_USER_KEY);
 		// ClientUser user = WebHelper.getBccUser(request.getSession());
-		String strClient = request.getParameter(CLIENT_KEY);
-		String strValve = request.getParameter(VALVE_KEY);
-		String strUser = request.getParameter(BCC_USER_KEY);
-		String action = request.getParameter(ACTION_KEY);
+		String strClient = request.getParameter(Constants.CLIENT_KEY);
+		String strValve = request.getParameter(Constants.VALVE_KEY);
+		String strUser = request.getParameter(Constants.BCC_USER_KEY);
+		String action = request.getParameter(Constants.ACTION_KEY);
 		if (strClient == null || strClient.equals(""))
-			if (session.getAttribute(CLIENT_KEY) == null)
+			if (session.getAttribute(Constants.CLIENT_KEY) == null)
 				strClient = "20";
 			else
-				strClient = ((Long) session.getAttribute(CLIENT_KEY)).toString();
+				strClient = ((Long) session.getAttribute(Constants.CLIENT_KEY)).toString();
 		if (strValve == null || strValve.equals(""))
-			if (session.getAttribute(VALVE_KEY) == null)
+			if (session.getAttribute(Constants.VALVE_KEY) == null)
 				strValve = "V54A";
 			else
-				strValve = (String) session.getAttribute(VALVE_KEY);
+				strValve = (String) session.getAttribute(Constants.VALVE_KEY);
 		if (strUser == null || strUser.equals(""))
-			if (session.getAttribute(BCC_USER_KEY) == null)
+			if (session.getAttribute(Constants.BCC_USER_KEY) == null)
 				strUser = "1";
 			else
-				strUser = ((Long) session.getAttribute(BCC_USER_KEY)).toString();
+				strUser = ((Long) session.getAttribute(Constants.BCC_USER_KEY)).toString();
 		action = (action == null) ? "" : action;
 		String clientIdDebugStr = strClient;
 		String actionDebugStr = (action == null) ? "null" : action;
@@ -130,7 +126,7 @@ public class AssetManagerServlet extends HttpServlet {
 			am = createAMSession(session, out, strClient, strValve, strUser);
 		}
 		if (action == null || action.equals("")) {
-			XMLAssetManager.sendXMLStructure(out, am.getCurrentFolder());
+			XMLAssetManager.sendXMLStructure(out, am.getCurrentFolder(), am.getCurrentValveId());
 		} else {
 			try {
 				processAction(request, am, action);
@@ -141,12 +137,12 @@ public class AssetManagerServlet extends HttpServlet {
 					am = null;
 					session.setAttribute(AM_PARAM, am);
 				} else
-					XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder());
+						XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder(), am.getCurrentValveId());
 			} catch (AssetManagerException ame) {
 				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
 			} catch (FileUploadException fue) {
-				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:" + am.getCurrentClientId()
-						+ " had an error.");
+					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:"
+							+ am.getCurrentClientId() + " had an error.");
 			} catch (Exception e) {
 				e.printStackTrace();
 				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error: " + e.getMessage() + " \ncurrent client id: "
@@ -172,9 +168,9 @@ public class AssetManagerServlet extends HttpServlet {
 		long cuserId = Long.parseLong(strUser);
 		am = new AssetManager(strValve, clientId, cuserId);
 		session.setAttribute(AM_PARAM, am);
-		session.setAttribute(CLIENT_KEY, clientId);
-		session.setAttribute(VALVE_KEY, strValve);
-		session.setAttribute(BCC_USER_KEY, cuserId);
+		session.setAttribute(Constants.CLIENT_KEY, clientId);
+		session.setAttribute(Constants.VALVE_KEY, strValve);
+		session.setAttribute(Constants.BCC_USER_KEY, cuserId);
 		log.debug("****** put new am in session with clientId : " + am.getCurrentClientId() + " valveId : "
 				+ am.getCurrentValveId());
 		return am;
@@ -206,10 +202,6 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("renameAsset")) {
 			damAction = new RenameAssetAction(request, am);
 		} else
-		// ?action=updateAssetTitle&name=My%20Picture.jpg&title=File%20under%20testingfolder
-		// if (action.equals("updateAssetTitle")) {
-		// damAction = new UpdateAssetTitle(request, am);
-		// } else
 		// ?action=moveAsset&name=My%20Picture.jpg&toname=testingfolder
 		if (action.equals("moveAsset")) {
 			damAction = new MoveAssetAction(request, am);

@@ -35,8 +35,9 @@ public class DAMFolder implements java.io.Serializable {
 	private Byte system;
 	private Date createDate;
 	private String path;
-	private Set<DAMAsset> assetFiles = new HashSet<DAMAsset>(0);
-	private Set<DAMFolder> subFolders = new HashSet<DAMFolder>(0);
+	// it bothers waltonl having HashSets initialized to an initialCapacity of 0
+	private Set<DAMAsset> assetFiles = new HashSet<DAMAsset>(16);
+	private Set<DAMFolder> subFolders = new HashSet<DAMFolder>(16);
 
 	// Constructors
 

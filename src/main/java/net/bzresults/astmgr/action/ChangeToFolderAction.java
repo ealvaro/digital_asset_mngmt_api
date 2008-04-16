@@ -20,9 +20,6 @@ public class ChangeToFolderAction implements IDAMAction {
 		if (!(strFolderID == null)) {
 			Long folderID = Long.parseLong(strFolderID);
 			am.changeToFolder(folderID);
-		} else {
-			String folderName = request.getParameter("name");
-			am.changeToFolder((folderName == null ? "ROOT" : folderName));
 		}
 	}
 }

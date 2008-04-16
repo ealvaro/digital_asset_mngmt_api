@@ -63,6 +63,8 @@ public class AssetManagerTest extends TestCase {
 
 	private DAMFolder localFolderToTest;
 
+	private String localFolderToTest2;
+
 	private DAMAsset localAssetToTest;
 
 	private DAMTag localTagToTest;
@@ -99,10 +101,11 @@ public class AssetManagerTest extends TestCase {
 	 */
 	protected void setUp() throws Exception {
 		super.setUp();
-		manager = new AssetManager(VALVEID, CLIENTID, BCCUSERID);
+		manager = new AssetManager(VALVEID, CLIENTID, BCCUSERID, folderMngr, assetMngr, tagMngr);
 		localFolderToTest = new DAMFolder(manager.getCurrentFolder(), "JUnit Test Folder", "test_folder",
 				"*.jpg,*.gif", VALVEID, CLIENTID, DAMFolder.VISIBLE, DAMFolder.WRITABLE, DAMFolder.NOT_SYSTEM, "/",
 				new HashSet<DAMAsset>(0), new HashSet<DAMFolder>(0));
+		localFolderToTest2 = "test_folder2";
 		localAssetToTest = new DAMAsset(manager.getCurrentFolder(), TESTFILENAME, VALVEID, new Date(System
 				.currentTimeMillis()), CLIENTID, DAMAsset.WRITABLE, BCCUSERID);
 		oldFileName = localAssetToTest.getFileName();
@@ -130,13 +133,13 @@ public class AssetManagerTest extends TestCase {
 			MockMultipartFile file = new MockMultipartFile(TESTFILENAME, newAssetAsBytes);
 			manager.createAsset(TESTFILENAME, file);
 
-			log.warn("Created Asset '" + TESTFILENAME + "'");
+			log.debug("Created Asset '" + TESTFILENAME + "'");
 		} catch (AssetManagerException ame) {
-			log.warn(ame.getMessage());
+			log.error(ame.getMessage());
 		} catch (FileNotFoundException fnfe) {
-			log.warn("Cannot find test file '" + newAssetFile.getAbsolutePath() + "'");
+			log.error("Cannot find test file '" + newAssetFile.getAbsolutePath() + "'");
 		} catch (IOException fnfe) {
-			log.warn("Cannot create Asset '" + TESTFILENAME + "'");
+			log.error("Cannot create Asset '" + TESTFILENAME + "'");
 		}
 		DAMAsset createdAsset = (DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0);
 		File f = new File(createdAsset.getPathAndName());
@@ -152,11 +155,13 @@ public class AssetManagerTest extends TestCase {
 	public void testCreateUserFolder() {
 		try {
 			manager.createUserFolder(localFolderToTest.getName());
+			log.debug("Created User Folder '" + localFolderToTest.getName() + "'");
 		} catch (AssetManagerException ame) {
-			log.warn(ame.getMessage());
+			log.error(ame.getMessage());
 		}
-		assertEquals(folderMngr.findByName(localFolderToTest.getName()).size(), 1);
-		DAMFolder createdFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+		List<DAMFolder> folders = folderMngr.findByName(localFolderToTest.getName());
+		assertEquals(folders.size(), 1);
+		DAMFolder createdFolder = (DAMFolder) folderMngr.findById(folders.get(0).getId());
 		File f = new File(createdFolder.getPath());
 		assertTrue(f.exists() && f.isDirectory());
 	}
@@ -170,30 +175,34 @@ public class AssetManagerTest extends TestCase {
 			createdAsset = (DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0);
 			f = new File(createdAsset.getPathAndName());
 			assertTrue(f.exists() && f.isFile());
-
+			log.debug("can't delete Asset '" + TESTFILENAME + "' from owner : " + createdAsset.getOwnerId().toString());
 		} catch (IOException fnfe) {
-			log.warn("Cannot delete Asset '" + TESTFILENAME + "'");
+			log.error("Cannot delete Asset '" + TESTFILENAME + "'");
 		}
 		manager.renameAsset(TESTFILENAME, newFileName);
 		createdAsset = (DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0);
 		f = new File(createdAsset.getPathAndName());
 		assertTrue(f.exists() && f.isFile());
+		log.debug("can't rename Asset '" + TESTFILENAME + "' from owner : " + createdAsset.getOwnerId().toString());
 		try {
-			manager.moveAsset(TESTFILENAME, localFolderToTest.getName());
+			DAMFolder folder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+			manager.moveAsset(TESTFILENAME, folder.getId());
 			createdAsset = (DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0);
 			f = new File(createdAsset.getPathAndName());
 			assertTrue(f.exists() && f.isFile());
-
+			log.debug("can't move Asset '" + TESTFILENAME + "' from owner : " + createdAsset.getOwnerId().toString());
 		} catch (IOException fnfe) {
-			log.warn("Cannot move Asset '" + TESTFILENAME + "'");
+			log.error("Cannot move Asset '" + TESTFILENAME + "'");
 		}
 		try {
 			manager.protectAsset(TESTFILENAME);
 			createdAsset = (DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0);
 			assertTrue(createdAsset.getReadOnly().equals(DAMAsset.WRITABLE));
-
+			log
+					.debug("can't protect Asset '" + TESTFILENAME + "' from owner : "
+							+ createdAsset.getOwnerId().toString());
 		} catch (IOException fnfe) {
-			log.warn("Cannot move Asset '" + TESTFILENAME + "'");
+			log.error("Cannot move Asset '" + TESTFILENAME + "'");
 		}
 	}
 
@@ -328,23 +337,23 @@ public class AssetManagerTest extends TestCase {
 		} else {
 			try {
 				log.debug("moving " + newFileName + " to " + localFolderToTest.getName());
-				manager.moveAsset(newFileName, localFolderToTest.getName());
+				DAMFolder folder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+				manager.moveAsset(newFileName, folder.getId());
 			} catch (IOException fnfe) {
-				log.warn("Cannot move Asset '" + newFileName + "'");
+				log.error("Cannot move Asset '" + newFileName + "'");
 			}
+			List <DAMAsset> assetList = assetMngr.findByFileName(newFileName);
+			assertEquals(assetList.size(),1);
+			DAMAsset movedAsset = (DAMAsset) assetList.get(0);
+			assertEquals(movedAsset.getFolder().getName(),localFolderToTest.getName());
 
-			assertEquals(((DAMAsset) assetMngr.findByFileName(newFileName).get(0)).getFolder().getName(),
-					localFolderToTest.getName());
+			log.debug(originalPath);
+			File f = new File(originalPath);
+			assertTrue(!f.exists());
+			log.debug(movedAsset.getPathAndName());
+			f = new File(movedAsset.getPathAndName());
+			assertTrue(f.exists());
 		}
-		DAMAsset movedAsset = (DAMAsset) assetMngr.findByFileName(newFileName).get(0);
-		assertEquals(localFolderToTest.getName(), movedAsset.getFolder().getName());
-
-		log.debug(originalPath);
-		File f = new File(originalPath);
-		assertTrue(!f.exists());
-		log.debug(movedAsset.getPathAndName());
-		f = new File(movedAsset.getPathAndName());
-		assertTrue(f.exists());
 	}
 
 	/**
@@ -356,17 +365,22 @@ public class AssetManagerTest extends TestCase {
 			fail("No folders to move");
 		} else {
 			String originalPath = manager.getCurrentFolder().getPath();
+			DAMFolder fromFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
 			try {
-				manager.moveFolder(localFolderToTest.getName(), "My Images");
-			} catch (AssetManagerException ame) {
-				log.warn(ame.getMessage());
-			} catch (IOException fnfe) {
-				log.warn("Cannot move folder '" + localFolderToTest.getName() + "'");
-			}
-			DAMFolder result = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
-			assertEquals("My Images", result.getParentFolder().getName());
 
-			assertEquals(originalPath + "/My Images/" + localFolderToTest.getName(), result.getPath());
+				manager.createUserFolder(localFolderToTest2);
+				DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest2).get(0);
+
+				manager.moveFolder(fromFolder.getId(), toFolder.getId());
+			} catch (AssetManagerException ame) {
+				log.error(ame.getMessage());
+			} catch (IOException fnfe) {
+				log.error("Cannot move folder '" + localFolderToTest.getName() + "'");
+			}
+			DAMFolder result = (DAMFolder) folderMngr.findById(fromFolder.getId());
+			assertEquals(localFolderToTest2, result.getParentFolder().getName());
+
+			assertEquals(originalPath + "/" + localFolderToTest2 + "/" + localFolderToTest.getName(), result.getPath());
 			File f = new File(result.getPath());
 			assertTrue(f.exists() && f.isDirectory());
 			log.debug("should be deleting this folder: " + originalPath + "/" + localFolderToTest.getName());
@@ -379,27 +393,15 @@ public class AssetManagerTest extends TestCase {
 	 * Test method for
 	 * {@link net.bzresults.astmgr.AssetManager#changeToFolder(java.lang.String)}.
 	 */
-	public void testChangeToFolderByName() {
-		try {
-			manager.changeToFolder("My Images");
-		} catch (AssetManagerException ame) {
-			log.warn(ame.getMessage());
-		}
-		assertEquals(manager.getCurrentFolder().getName(), "My Images");
-	}
-
-	/**
-	 * Test method for
-	 * {@link net.bzresults.astmgr.AssetManager#changeToFolder(java.lang.String)}.
-	 */
 	public void testChangeToParent() {
+		DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest2).get(0);
 		try {
-			manager.changeToFolder("My Images");
+			manager.changeToFolder(toFolder.getId());
 		} catch (AssetManagerException ame) {
-			log.warn(ame.getMessage());
+			log.error(ame.getMessage());
 		}
-		manager.changeToParent();
-		manager.changeToParent();
+		manager.changeToParent();// valve folder
+		manager.changeToParent();// root folder
 
 		assertEquals(manager.getCurrentFolder().getName(), "ROOT");
 	}
@@ -408,12 +410,12 @@ public class AssetManagerTest extends TestCase {
 	 * Test method for
 	 * {@link net.bzresults.astmgr.AssetManager#changeToFolder(java.lang.Long)
 	 */
-	public void testChangeToFolderById() {
+	public void testChangeToFolder() {
+		DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
 		try {
-			manager.changeToFolder(folderMngr.getFolder(manager.getCriteria_values(), localFolderToTest.getName())
-					.getId());
+			manager.changeToFolder(toFolder.getId());
 		} catch (AssetManagerException ame) {
-			log.warn(ame.getMessage());
+			log.error(ame.getMessage());
 		}
 
 		assertEquals(manager.getCurrentFolder().getName(), localFolderToTest.getName());
@@ -429,9 +431,10 @@ public class AssetManagerTest extends TestCase {
 		log.debug("going to be deleting this: " + originalPath + " from this current folder: "
 				+ localFolderToTest.getName());
 		try {
-			manager.changeToFolder(localFolderToTest.getName());
+			DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+			manager.changeToFolder(toFolder.getId());
 		} catch (AssetManagerException ame) {
-			log.warn(ame.getMessage());
+			log.error(ame.getMessage());
 		}
 		if (manager.getCurrentFolder().getAssetFiles().isEmpty()) {
 			fail("No Asset files to delete");
@@ -441,9 +444,9 @@ public class AssetManagerTest extends TestCase {
 				manager.deleteAsset(newFileName);
 
 			} catch (FileNotFoundException fnfe) {
-				log.warn("Cannot find test file '" + newFileName + "'");
+				log.error("Cannot find test file '" + newFileName + "'");
 			} catch (IOException ioe) {
-				log.warn("Cannot delete Asset file '" + newFileName + "'");
+				log.error("Cannot delete Asset file '" + newFileName + "'");
 			}
 
 			assertEquals(assetMngr.findByFileName(newFileName).size(), 0);
@@ -458,21 +461,27 @@ public class AssetManagerTest extends TestCase {
 	 */
 	public void testDeleteFolder() {
 		String originalPath = "";
+		DAMFolder folder = (DAMFolder) folderMngr.findByName(localFolderToTest2).get(0);
+		DAMFolder subfolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
 		try {
-			manager.changeToFolder("My Images");
+			manager.changeToFolder(folder.getId());
 			originalPath = manager.getCurrentFolder().getPath();
 			if (manager.getCurrentFolder().getSubFolders().isEmpty())
 				fail("No folders to delete");
 			else
-				manager.deleteFolder(localFolderToTest.getName());
+				manager.deleteFolder(subfolder.getId());
+
+			assertNull(folderMngr.findById(subfolder.getId()));
+			assertEquals(folderMngr.findByName(localFolderToTest.getName()).size(), 0);
+			File f = new File(originalPath + "/" + localFolderToTest.getName());
+			assertTrue(!f.exists());
+			// cleanup
+			manager.changeToParent();
+			manager.deleteFolder(folder.getId());
+
 		} catch (AssetManagerException ame) {
-			log.warn(ame.getMessage());
+			log.error(ame.getMessage());
 		}
-
-		assertEquals(folderMngr.findByName(localFolderToTest.getName()).size(), 0);
-		File f = new File(originalPath + "/" + localFolderToTest.getName());
-		assertTrue(!f.exists());
-
 	}
 
 	/*
@@ -492,12 +501,9 @@ public class AssetManagerTest extends TestCase {
 		// name to use as the "moveTo" folder
 		Long moveToFolderId = null;
 		String moveToFolderName = null;
-		for (DAMFolder d : manager.getCurrentFolder().getSubFolders()) {
-			moveToFolderId = d.getId();
-			moveToFolderName = d.getName();
-			log.debug("assigning " + moveToFolderName + " with id " + moveToFolderId + " as the move to folder");
-			break;
-		}
+		moveToFolderId = manager.getValveFolder().getId();
+		moveToFolderName = manager.getValveFolder().getName();
+		log.debug("assigning " + moveToFolderName + " with id " + moveToFolderId + " as the move to folder");
 
 		// creation ....
 		String topFolderForTest = "A Top Test Folder";
@@ -510,7 +516,8 @@ public class AssetManagerTest extends TestCase {
 		String topFolderAssetTwo = "g6.png";
 
 		manager.createUserFolder(topFolderForTest);
-		manager.changeToFolder(topFolderForTest);
+		DAMFolder damtopFolderForTest = (DAMFolder) folderMngr.findByName(topFolderForTest).get(0);
+		manager.changeToFolder(damtopFolderForTest.getId());
 
 		File assetFile = new File("src/test/java/" + topFolderAssetOne);
 		byte[] newAssetAsBytes = MultipartTestUtils.getBytesFromFile(assetFile);
@@ -523,8 +530,9 @@ public class AssetManagerTest extends TestCase {
 		manager.createAsset(topFolderAssetTwo, file);
 
 		manager.createUserFolder(subFolderOne);
+		DAMFolder damsubFolderOne = (DAMFolder) folderMngr.findByName(subFolderOne).get(0);
 
-		manager.changeToFolder(subFolderOne);
+		manager.changeToFolder(damsubFolderOne.getId());
 		assetFile = new File("src/test/java/" + subFolderOneAsset);
 		newAssetAsBytes = MultipartTestUtils.getBytesFromFile(assetFile);
 		file = new MockMultipartFile(subFolderOneAsset, newAssetAsBytes);
@@ -537,8 +545,9 @@ public class AssetManagerTest extends TestCase {
 
 		manager.changeToParent();
 		manager.createUserFolder(subFolderTwo);
+		DAMFolder damsubFolderTwo = (DAMFolder) folderMngr.findByName(subFolderTwo).get(0);
 
-		manager.changeToFolder(subFolderTwo);
+		manager.changeToFolder(damsubFolderTwo.getId());
 		assetFile = new File("src/test/java/" + subFolderTwoAsset);
 		newAssetAsBytes = MultipartTestUtils.getBytesFromFile(assetFile);
 		file = new MockMultipartFile(subFolderTwoAsset, newAssetAsBytes);
@@ -617,7 +626,7 @@ public class AssetManagerTest extends TestCase {
 		// now test move
 
 		manager.changeToFolder(originalPathFolderId);
-		manager.moveFolder(topFolderForTest, moveToFolderName);
+		manager.moveFolder(damtopFolderForTest.getId(), moveToFolderId);
 
 		// verify move succeeded in db and filesystem
 
@@ -721,51 +730,14 @@ public class AssetManagerTest extends TestCase {
 	/*
 	 * @author waltonl
 	 */
-	public void testDeleteReadOnlyFolderByNameWithAndWithoutByPass() throws AssetManagerException {
-		String folderName = "testROFolder";
-		String fullPath = manager.getCurrentFolder().getPath() + "/" + folderName;
-
-		// create one for the deleting test and make it read only with protect
-		manager.createUserFolder(folderName);
-		manager.protectFolder(folderName);
-		List<DAMFolder> folders = folderMngr.findByPath(fullPath);
-		assertEquals(folders.size(), 1);
-		DAMFolder aReadOnlyFolder = folders.get(0);
-		File f = new File(fullPath);
-		assertTrue(f.exists());
-		assertEquals(DAMFolder.READONLY, aReadOnlyFolder.getReadOnly());
-
-		// without bypass test
-		try {
-			manager.deleteFolder(aReadOnlyFolder.getName());
-			fail("Should get AssetManagerException for deleting read only folder without passing bypass param as true");
-		} catch (AssetManagerException e) {
-			assertTrue(true);
-		}
-		folders = folderMngr.findByPath(fullPath);
-		assertTrue(folders.size() > 0);
-		f = new File(fullPath);
-		assertTrue(f.exists());
-
-		// this is both the bypass test and the cleanup
-		manager.deleteFolder(aReadOnlyFolder.getName(), true, false);
-		folders = folders = folderMngr.findByPath(fullPath);
-		assertTrue(folders.size() == 0);
-		f = new File(fullPath);
-		assertTrue(!f.exists());
-
-	}
-
-	/*
-	 * @author waltonl
-	 */
 	public void testDeleteReadOnlyFolderByIdWithAndWithoutByPass() throws AssetManagerException {
 		String folderName = "testROFolder";
 		String fullPath = manager.getCurrentFolder().getPath() + "/" + folderName;
 
 		// create one for the deleting test and make it read only with protect
 		manager.createUserFolder(folderName);
-		manager.protectFolder(folderName);
+		DAMFolder damfolderName = (DAMFolder) folderMngr.findByName(folderName).get(0);
+		manager.protectFolder(damfolderName.getId());
 		List<DAMFolder> folders = folderMngr.findByPath(fullPath);
 		assertEquals(folders.size(), 1);
 		DAMFolder aReadOnlyFolder = folders.get(0);
@@ -792,44 +764,6 @@ public class AssetManagerTest extends TestCase {
 		f = new File(fullPath);
 		assertTrue(!f.exists());
 
-	}
-
-	/*
-	 * @author waltonl
-	 */
-	public void testDeleteReadOnlySystemFolderByNameWithAndWithoutByPass() throws AssetManagerException, IOException {
-		String newFolderName = "test_ROSystemFolder";
-		String fullPath = manager.getCurrentFolder().getPath() + "/" + newFolderName;
-		manager.createAllFoldersInPathIfNeeded(fullPath, DAMFolder.READONLY, DAMFolder.SYSTEM);
-		// the above method leaves currentFolder in the created one .. so move
-		// up one for next stuff to work ...
-		manager.changeToParent();
-		List<DAMFolder> folders = folders = folderMngr.findByPath(fullPath);
-		assertTrue(folders.size() > 0);
-		DAMFolder aReadOnlySystemFolder = folders.get(0);
-		assertEquals(DAMFolder.READONLY, aReadOnlySystemFolder.getReadOnly());
-		assertEquals(DAMFolder.SYSTEM, aReadOnlySystemFolder.getSystem());
-		File f = new File(fullPath);
-		assertTrue(f.exists());
-
-		// without bypass test
-		try {
-			manager.deleteFolder(aReadOnlySystemFolder.getName());
-			fail("Should get AssetManagerException for deleting read only folder without passing bypass param as true");
-		} catch (AssetManagerException e) {
-			assertTrue(true);
-		}
-		folders = folders = folderMngr.findByPath(fullPath);
-		assertTrue(folders.size() > 0);
-		f = new File(fullPath);
-		assertTrue(f.exists());
-
-		// this is both the bypass test and the cleanup
-		manager.deleteFolder(aReadOnlySystemFolder.getName(), true, true);
-		folders = folders = folderMngr.findByPath(fullPath);
-		assertTrue(folders.size() == 0);
-		f = new File(fullPath);
-		assertTrue(!f.exists());
 	}
 
 	/*
@@ -882,7 +816,7 @@ public class AssetManagerTest extends TestCase {
 
 		// TODO: This will need changed when start implementing valve/rooftop id
 		// handling
-		String folderPath = manager.getCurrentFolder().getPath()
+		String folderPath = manager.getCurrentFolder().getPath() + "/" + VALVEID
 				+ "/My Digital Ads/Fake Campaign Type/Fake Ad Name_adSet99";
 		File f = new File(folderPath);
 		assertTrue(!f.exists());
@@ -890,7 +824,7 @@ public class AssetManagerTest extends TestCase {
 		// test creating when doesn't exist
 		manager.createAllFoldersInPathIfNeeded(folderPath, DAMFolder.READONLY, DAMFolder.SYSTEM);
 
-		List<DAMFolder> folders = folderMngr.findByProperty(FolderDAO.PATH, folderPath);
+		List<DAMFolder> folders = folderMngr.findByPath(folderPath);
 		assertTrue(folders.size() > 0);
 		assertEquals(folderPath, folders.get(0).getPath());
 		f = new File(folderPath);
@@ -903,7 +837,7 @@ public class AssetManagerTest extends TestCase {
 		// problem
 		manager.createAllFoldersInPathIfNeeded(folderPath, DAMFolder.READONLY, DAMFolder.SYSTEM);
 
-		folders = folderMngr.findByProperty(FolderDAO.PATH, folderPath);
+		folders = folderMngr.findByPath(folderPath);
 		assertTrue(folders.size() > 0);
 		assertEquals(folderPath, folders.get(0).getPath());
 		f = new File(folderPath);
@@ -913,12 +847,14 @@ public class AssetManagerTest extends TestCase {
 		// clean up both db and filesystem since this test is self-contained ...
 		// only part after My Digital Ads
 		manager.changeToParent();
-		manager.changeToParent(); // go up twice to get to part we're going to
-		// clean up
+		DAMFolder folderToDel = manager.getCurrentFolder();
+		// go up twice to get to part we're going to clean up
+		manager.changeToParent();
 
-		manager.deleteFolder("Fake Campaign Type", true, true);
+		manager.deleteFolder(folderToDel.getId(), true, true);
 
-		String partialFolderPath = manager.getCurrentFolder().getPath() + "/My Digital Ads/Fake Campaign Type";
+		String partialFolderPath = manager.getCurrentFolder().getPath() + "/" + VALVEID
+				+ "/My Digital Ads/Fake Campaign Type";
 		folders = folderMngr.findByProperty(FolderDAO.PATH, partialFolderPath);
 		assertEquals(0, folders.size());
 		f = new File(partialFolderPath);
@@ -944,7 +880,7 @@ public class AssetManagerTest extends TestCase {
 	 * @author waltonl
 	 */
 	public void testRegisterCreatedAssetWhenFolderPathDoesNotExist() {
-		String folderPath = manager.getCurrentFolder().getPath()
+		String folderPath = manager.getCurrentFolder().getPath() + "/" + VALVEID
 				+ "/My Digital Ads/Fake Campaign Type/Fake Ad Name_adSet99";
 		File f = new File(folderPath);
 		assertTrue(!f.exists());
@@ -967,7 +903,7 @@ public class AssetManagerTest extends TestCase {
 
 		// TODO: This will need changed when start implementing valve/rooftop id
 		// handling
-		String folderPath = manager.getCurrentFolder().getPath()
+		String folderPath = manager.getCurrentFolder().getPath() + "/" + VALVEID
 				+ "/My Digital Ads/Fake Campaign Type/Fake Ad Name_adSet99";
 		File f = new File(folderPath);
 		assertTrue(!f.exists());
@@ -1026,16 +962,17 @@ public class AssetManagerTest extends TestCase {
 		// clean up both db and filesystem since this test is self-contained ...
 		// only part after My Digital Ads
 		manager.changeToParent();
-		manager.changeToParent(); // go up twice to get to part we're going to
-		// clean up
+		DAMFolder folderToDel = manager.getCurrentFolder();
+		// go up twice to get to part we're going to clean up
+		manager.changeToParent();
 
-		manager.deleteFolder("Fake Campaign Type", true, true);
+		manager.deleteFolder(folderToDel.getId(), true, true);
 
-		String partialFolderPath = manager.getCurrentFolder().getPath() + "/My Digital Ads/Fake Campaign Type";
+		String partialFolderPath = manager.getCurrentFolder().getPath() + "/" + VALVEID
+				+ "/My Digital Ads/Fake Campaign Type";
 		List<DAMFolder> folders = folderMngr.findByProperty(FolderDAO.PATH, partialFolderPath);
 		assertEquals(0, folders.size());
 		f = new File(partialFolderPath);
 		assertTrue(!f.exists());
-
 	}
 }

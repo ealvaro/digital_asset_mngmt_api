@@ -27,6 +27,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.NonUniqueObjectException;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.FileCopyUtils;
@@ -86,6 +87,8 @@ public class AssetManager implements IAssetManager {
 		if (this.currentFolder == null) {
 			createAllSystemFolders();
 		}
+		this.currentFolder = getRoot();// current folder will be the root, by
+										// default.
 	}
 
 	private void createAllSystemFolders() {
@@ -375,10 +378,10 @@ public class AssetManager implements IAssetManager {
 	 * 
 	 * @see net.bzresults.astmgr.IAssetManager#moveAsset(java.lang.String,java.lang.String)
 	 */
-	public void moveAsset(String assetName, String folderName) throws IOException {
+	public void moveAsset(String assetName, java.lang.Long folderId) throws IOException {
 		if (!currentFolder.getReadOnly().equals(DAMFolder.READONLY)) {
 			DAMAsset dAMAsset = findAssetInCurrentFolder(currentFolder, assetName);
-			DAMFolder dAMFolder = folderMngr.getFolder(getCriteria_values(), folderName);
+			DAMFolder dAMFolder = folderMngr.findById(folderId);
 			if (dAMAsset != null && dAMFolder != null) {
 				// DAMAsset not already there
 				if (!dAMAsset.getFolder().getId().equals(dAMFolder.getId())) {
@@ -394,11 +397,11 @@ public class AssetManager implements IAssetManager {
 								dAMFolder.addAsset(dAMAsset);
 								assetMngr.attachDirty(dAMAsset);
 								folderMngr.attachDirty(dAMFolder);
-								log.debug(this.currentClientId + ": Moved file '" + assetName + "' to folder '"
-										+ folderName + "'");
+								log.debug(this.currentClientId + ": Moved file '" + assetName + "' to folder id='"
+										+ folderId + "'");
 							} else
 								log.debug(this.currentClientId + ": Couldn't physically Move file '" + assetName
-										+ "' to folder '" + folderName + "' in the O/S.");
+										+ "' to folder id='" + folderId + "' in the O/S.");
 						} else
 							log.debug(this.currentClientId + ": DAMAsset named '" + assetName
 									+ " is owned by another user.  Cannot move it.");
@@ -409,8 +412,8 @@ public class AssetManager implements IAssetManager {
 					log.debug(this.currentClientId + ": Can't move DAMAsset name '" + assetName
 							+ "' to the same folder is at");
 			} else
-				log.debug(this.currentClientId + ": Invalid DAMAsset name '" + assetName + "' or invalid folder name '"
-						+ folderName);
+				log.debug(this.currentClientId + ": Invalid DAMAsset name '" + assetName + "' or invalid folder id='"
+						+ folderId);
 		} else
 			log.debug(this.currentClientId + ": DAMAsset named '" + assetName
 					+ "' cannot be moved from Read-Only folder named '" + currentFolder.getName() + "'");
@@ -475,15 +478,6 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#updateAssetTitle(java.lang.String,java.lang.String)
-	 */
-	// public void updateAssetTitle(String assetName, String strTitle) {
-	// deleteAssetTagName(assetName, "TITLE");
-	// addAssetTag(assetName, "TITLE", strTitle);
-	// }
-	/*
-	 * (non-Javadoc)
-	 * 
 	 * @see net.bzresults.astmgr.IAssetManager#deleteAsset(java.lang.String)
 	 */
 	public void deleteAsset(String assetName) throws IOException {
@@ -526,14 +520,13 @@ public class AssetManager implements IAssetManager {
 			deleteAllAssetTags(dAMAsset);
 			currentFolder.removeAsset(dAMAsset);
 			assetMngr.delete(dAMAsset);
-			this.currentFolder = folderMngr.getFolder(getCriteria_values(), currentFolder.getId());
+			this.currentFolder = folderMngr.findById(currentFolder.getId());
 			log.debug(this.currentClientId + ": Deleted  file '" + dAMAsset.getFileName() + "' under folder '"
 					+ currentFolder.getName() + "'");
 		} catch (IOException ioe) {
 			throw new IOException("Could not delete DAMAsset file '" + dAMAsset.getFileName() + "' under folder '"
 					+ currentFolder.getName() + "'");
 		}
-
 	}
 
 	/*
@@ -752,16 +745,16 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#protectAsset(java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#protectAsset(java.lang.Long)
 	 */
-	public void protectFolder(String folderName) {
-		DAMFolder dAMFolder = findFolderInCurrentFolder(currentFolder, folderName);
+	public void protectFolder(Long folderId) {
+		DAMFolder dAMFolder = findFolderInCurrentFolder(currentFolder, folderId);
 		if (dAMFolder != null) {
 			File file = new File(dAMFolder.getPath());
 			file.setReadOnly();
 			dAMFolder.setReadOnly(DAMFolder.READONLY);
 			folderMngr.attachDirty(dAMFolder);
-			log.debug(this.currentClientId + ": DAMFolder '" + folderName + "' is now Read-Only.");
+			log.debug(this.currentClientId + ": Folder with id='" + folderId + "' is now Read-Only.");
 		}
 	}
 
@@ -770,34 +763,33 @@ public class AssetManager implements IAssetManager {
 	 * 
 	 * @see net.bzresults.astmgr.IAssetManager#unProtectAsset(java.lang.String)
 	 */
-	public void unProtectFolder(String folderName) {
-		DAMFolder dAMFolder = findFolderInCurrentFolder(currentFolder, folderName);
+	public void unProtectFolder(Long folderId) {
+		DAMFolder dAMFolder = findFolderInCurrentFolder(currentFolder, folderId);
 		if (dAMFolder != null) {
 			File file = new File(dAMFolder.getPath());
 			file.canWrite();
 			dAMFolder.setReadOnly(DAMFolder.WRITABLE);
 			folderMngr.attachDirty(dAMFolder);
-			log.debug(this.currentClientId + ": DAMFolder '" + folderName + "' is now Writable.");
+			log.debug(this.currentClientId + ": Folder with id='" + folderId + "' is now Writable.");
 		} else
-			log.debug(this.currentClientId + ": DAMFolder named '" + folderName + "' doesn't exist under folder '"
+			log.debug(this.currentClientId + ": Folder with id='" + folderId + "' doesn't exist under folder '"
 					+ currentFolder.getName() + "'");
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#moveFolder(java.lang.String,
-	 *      java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#moveFolder(java.lang.Long,java.lang.Long)
 	 */
-	public void moveFolder(String folderName, String toFolderName) throws AssetManagerException, IOException {
-		DAMFolder fromFolder = findFolderInCurrentFolder(currentFolder, folderName);
-		DAMFolder toFolder = folderMngr.getFolder(getCriteria_values(), toFolderName);
+	public void moveFolder(Long fromFolderId, Long toFolderId) throws AssetManagerException, IOException {
+		DAMFolder fromFolder = findFolderInCurrentFolder(currentFolder, fromFolderId);
+		DAMFolder toFolder = folderMngr.findById(toFolderId);
 		// to and from Folders exist
 		if (fromFolder != null && toFolder != null)
 			// Folder not already there
 			if (!fromFolder.getParentFolder().getId().equals(toFolder.getId()))
 				// ToFolder doesn't have already a fromFolder
-				if (findFolderInCurrentFolder(toFolder, folderName) == null)
+				if (findFolderInCurrentFolder(toFolder, fromFolder.getName()) == null)
 					// both folders are NOT readonly
 					if (!fromFolder.getReadOnly().equals(DAMFolder.READONLY)
 							&& !toFolder.getReadOnly().equals(DAMFolder.READONLY)) {
@@ -810,17 +802,17 @@ public class AssetManager implements IAssetManager {
 						log.debug(this.currentClientId + ": Moved folder '" + fromFolder.getName() + "' to folder '"
 								+ toFolder.getName() + "'");
 					} else
-						log.error(this.currentClientId + ": folder '" + folderName + "' is read-only or folder '"
-								+ toFolderName + "' is read-only");
+						log.error(this.currentClientId + ": folder '" + fromFolder.getName()
+								+ "' is read-only or folder '" + toFolder.getName() + "' is read-only");
 				else
-					log.error(this.currentClientId + ": Can't move folder name '" + folderName + "' to folder '"
-							+ toFolderName + "' because there is already one there");
+					log.error(this.currentClientId + ": Can't move folder name '" + fromFolder.getName()
+							+ "' to folder '" + toFolder.getName() + "' because there is already one there");
 			else
-				log.error(this.currentClientId + ": Can't move folder name '" + folderName
+				log.error(this.currentClientId + ": Can't move folder name '" + fromFolder.getName()
 						+ "' to the same folder it's at");
 		else
-			log.error(this.currentClientId + ": DAMFolder '" + folderName + "' doesn't exist or folder '"
-					+ toFolderName + "' doesn't exist");
+			log.error(this.currentClientId + ": Folder with id='" + fromFolderId
+					+ "' doesn't exist or folder with id='" + toFolderId + "' doesn't exist");
 	}
 
 	/*
@@ -840,7 +832,7 @@ public class AssetManager implements IAssetManager {
 	 * @see net.bzresults.astmgr.IAssetManager#changeToFolder(java.lang.Long)
 	 */
 	public void changeToFolder(java.lang.Long id) throws AssetManagerException {
-		DAMFolder dAMFolder = folderMngr.getFolder(getCriteria_values(), id);
+		DAMFolder dAMFolder = folderMngr.findById(id);
 		if (dAMFolder != null) {
 			this.currentFolder = dAMFolder;
 			log.debug(this.currentClientId + ": Moved current folder to '" + dAMFolder.getName() + "' with id=" + id);
@@ -848,25 +840,6 @@ public class AssetManager implements IAssetManager {
 			// folder was created already here, by somebody else.
 			throw new AssetManagerException("Folder with id = '" + id + "' doesn't exist or has been deleted.");
 
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#changeToFolder(java.lang.String)
-	 */
-	public void changeToFolder(String folderName) throws AssetManagerException {
-		if (!folderName.equals(FolderDAO.ROOTNAME)) {
-			DAMFolder dAMFolder = folderMngr.getFolder(getCriteria_values(), folderName);
-			if (dAMFolder != null) {
-				currentFolder = dAMFolder;
-				log.debug(this.currentClientId + ": Moved current folder to '" + folderName + "' with id="
-						+ dAMFolder.getId());
-			} else
-				// folder was created already here, by somebody else.
-				throw new AssetManagerException("Folder '" + folderName + "' doesn't exist or has been deleted.");
-		} else
-			currentFolder = getRoot();
 	}
 
 	/*
@@ -902,8 +875,7 @@ public class AssetManager implements IAssetManager {
 		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId, currentClientId,
 				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0),
 				new HashSet<DAMFolder>(0));
-		List<DAMAsset> assetList = assetMngr.getRecentItems(AssetDAO.CLIENT_ID, currentClientId, new Date(System
-				.currentTimeMillis()));
+		List<DAMAsset> assetList = assetMngr.getRecentItems(getCriteria_values(), new Date(System.currentTimeMillis()));
 		Set<DAMAsset> as = new HashSet<DAMAsset>(0);
 		for (DAMAsset a : assetList)
 			as.add(a);
@@ -930,65 +902,26 @@ public class AssetManager implements IAssetManager {
 			if (!currentFolder.getSubFolders().isEmpty()) {
 				DAMFolder folder = findFolderInCurrentFolder(currentFolder, id);
 				if (folder != null) {
-					dAMFolder = folderMngr.getFolder(getCriteria_values(), id);
+					dAMFolder = folderMngr.findById(id);
 					if (dAMFolder != null) {
 						if (byPassReadOnlyCheck || dAMFolder.getReadOnly().equals(DAMFolder.WRITABLE)) {
 							deleteFolder(currentFolder, dAMFolder, byPassReadOnlyCheck, byPassSystemCheck);
-							currentFolder = folderMngr.getFolder(getCriteria_values(), currentFolder.getId());
+							currentFolder = folderMngr.findById(currentFolder.getId());
 						} else {
 							throw new AssetManagerException("Attempt to Delete Read-Only folder: id: " + id + " name: "
 									+ dAMFolder.getName());
 						}
-					} else {
-						// discrepancy between hibernate cached stuff and what's
-						// in
-						// the DAM db
-						throw new AssetManagerException("Folder id = '" + id + "' under parent folder '"
-								+ currentFolder.getName() + "no longer exists.");
-					}
-				}
+					} else
+						throw new AssetManagerException("Folder with id = '" + id + "' under parent folder '"
+								+ currentFolder.getName() + " doesn't exist.");
+				} else
+					throw new AssetManagerException("Folder with id = '" + id + "' under parent folder '"
+							+ currentFolder.getName() + " doesn't exist.");
 			}
 		} catch (IOException ioe) {
 			throw new AssetManagerException("IOException Occured while deleting " + dAMFolder.getPath()
 					+ " from file system");
 		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#deleteFolder(java.lang.String)
-	 */
-	public void deleteFolder(String folderName) throws AssetManagerException {
-		deleteFolder(folderName, false, false);
-	}
-
-	public void deleteFolder(String folderName, boolean byPassReadOnlyCheck, boolean byPassSystemCheck)
-			throws AssetManagerException {
-		DAMFolder dAMFolder = null;
-		try {
-			if (!currentFolder.getSubFolders().isEmpty()) {
-				DAMFolder folder = findFolderInCurrentFolder(currentFolder, folderName);
-				if (folder != null) {
-					dAMFolder = folderMngr.getFolder(getCriteria_values(), folderName);
-					if (dAMFolder != null) {
-						if (byPassReadOnlyCheck || dAMFolder.getReadOnly().equals(DAMFolder.WRITABLE)) {
-							deleteFolder(currentFolder, dAMFolder, byPassReadOnlyCheck, byPassSystemCheck);
-							currentFolder = folderMngr.getFolder(getCriteria_values(), currentFolder.getId());
-						} else
-							throw new AssetManagerException("Attempt to Delete Read-Only folder: "
-									+ dAMFolder.getName());
-					} else {
-						throw new AssetManagerException("Folder '" + folderName + "' under parent folder '"
-								+ currentFolder.getName() + "no longer exists.");
-					}
-				}
-			}
-		} catch (IOException ioe) {
-			throw new AssetManagerException("IOException occured while deleting folder " + dAMFolder.getPath()
-					+ " with assumption that this delete is from currentFolder with path: " + currentFolder.getPath());
-		}
-
 	}
 
 	private void deleteFolder(DAMFolder currentFolder, DAMFolder dAMFolder, boolean byPassReadOnlyCheck,
@@ -997,12 +930,9 @@ public class AssetManager implements IAssetManager {
 		if (dAMFolder != null) {
 			if (byPassSystemCheck || dAMFolder.getSystem().equals(DAMFolder.NOT_SYSTEM)) {
 				if (byPassReadOnlyCheck || dAMFolder.getReadOnly().equals(DAMFolder.WRITABLE)) {
-
-					deleteFolderFromFileSystem(dAMFolder); // this deletes all
-					// assets and
-					// subfolders and
-					// itself from file
-					// system!
+					// this deletes all assets and subfolders and itself from
+					// file system!
+					deleteFolderFromFileSystem(dAMFolder);
 
 					if (!currentFolder.getSubFolders().isEmpty()) {
 						currentFolder.removeSubFolder(dAMFolder);
@@ -1236,7 +1166,7 @@ public class AssetManager implements IAssetManager {
 	 */
 	public void createAllFoldersInPathIfNeeded(String folderPath, Byte readOnly, Byte system)
 			throws AssetManagerException, IOException {
-		changeToFolder(getRoot().getName());
+		changeToFolder(getRoot().getId());
 		log.debug("currentFolder now: " + currentFolder.getName() + " with path: " + currentFolder.getPath());
 
 		if (folderPath.startsWith(currentFolder.getPath() + "/"))
@@ -1247,18 +1177,18 @@ public class AssetManager implements IAssetManager {
 
 		String[] paths = folderPath.split("/");
 		String accumulatedPath = currentFolder.getPath();
-		for (int i = 0; i < paths.length; i++) {
-			accumulatedPath += "/" + paths[i];
-			List<DAMFolder> folders = folderMngr.findByProperty(FolderDAO.PATH, accumulatedPath);
+		for (String path : paths) {
+			accumulatedPath += "/" + path;
+			List<DAMFolder> folders = folderMngr.findByPath(accumulatedPath);
 			if (folders.size() == 0) {
-				createFolder(paths[i], paths[i], "", readOnly, system, accumulatedPath);
+				createFolder(path, path, "", readOnly, system, accumulatedPath);
 			}
-			changeToFolder(paths[i]);
+			changeToFolder(((DAMFolder) folderMngr.findByPath(accumulatedPath).get(0)).getId());
 		}
 	}
 
 	public DAMFolder getValveFolder() {
-		return this.folderMngr.getFolder(getCriteria_values(), this.currentValveId);
+		return this.folderMngr.getValveFolder(getCriteria_values(), this.currentValveId);
 	}
 
 	public DAMFolder getRoot() {

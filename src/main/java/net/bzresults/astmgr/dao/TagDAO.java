@@ -30,7 +30,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public void save(DAMTag transientInstance) {
-		log.warn("saving DAMTag instance");
+		log.debug("saving DAMTag instance");
 		try {
 			getHibernateTemplate().save(transientInstance);
 			log.warn("save successful");
@@ -41,7 +41,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public void delete(DAMTag persistentInstance) {
-		log.warn("deleting DAMTag instance");
+		log.debug("deleting DAMTag instance");
 		try {
 			getHibernateTemplate().delete(persistentInstance);
 			log.warn("delete successful");
@@ -52,7 +52,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public DAMTag findById(java.lang.Long id) {
-		log.warn("getting DAMTag instance with id: " + id);
+		log.debug("getting DAMTag instance with id: " + id);
 		try {
 			DAMTag instance = (DAMTag) getHibernateTemplate().get("net.bzresults.astmgr.model.DAMTag", id);
 			return instance;
@@ -63,7 +63,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public List findByExample(DAMTag instance) {
-		log.warn("finding DAMTag instance by example");
+		log.debug("finding DAMTag instance by example");
 		try {
 			List results = getHibernateTemplate().findByExample(instance);
 			log.warn("find by example successful, result size: " + results.size());
@@ -75,7 +75,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public List findByProperty(String propertyName, Object value) {
-		log.warn("finding DAMTag instance with property: " + propertyName + ", value: " + value);
+		log.debug("finding DAMTag instance with property: " + propertyName + ", value: " + value);
 		try {
 			String queryString = "from DAMTag as model where model." + propertyName + "= ?";
 			return getHibernateTemplate().find(queryString, value);
@@ -86,7 +86,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public List<DAMTag> getTagsByAttribValue(String attribName, Object attribValue) {
-		log.warn("finding Asset Tags instances with attribute: " + attribName + ", attribute value like: " + attribValue);
+		log.debug("finding Asset Tags instances with attribute: " + attribName + ", attribute value like: " + attribValue);
 		try {
 			String queryString = "from DAMTag as model where model." + TAG_ATTRIB + " = '" + attribName
 					+ "' AND model." + TAG_VALUE + " like  '%" + attribValue + "%'";
@@ -106,7 +106,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public List findByAssetId(Long assetId) {
-		log.warn("finding DAMTag instance for DAMAsset id = " + assetId);
+		log.debug("finding DAMTag instance for DAMAsset id = " + assetId);
 		try {
 			String queryString = "from DAMTag as model where model.assetId.id = ?";
 			return getHibernateTemplate().find(queryString, assetId);
@@ -117,7 +117,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public List findAll() {
-		log.warn("finding all DAMTag instances");
+		log.debug("finding all DAMTag instances");
 		try {
 			String queryString = "from DAMTag";
 			return getHibernateTemplate().find(queryString);
@@ -128,7 +128,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public DAMTag merge(DAMTag detachedInstance) {
-		log.warn("merging DAMTag instance");
+		log.debug("merging DAMTag instance");
 		try {
 			DAMTag result = (DAMTag) getHibernateTemplate().merge(detachedInstance);
 			log.warn("merge successful");
@@ -140,7 +140,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public void attachDirty(DAMTag instance) {
-		log.warn("attaching dirty DAMTag instance");
+		log.debug("attaching dirty DAMTag instance");
 		try {
 			getHibernateTemplate().saveOrUpdate(instance);
 			log.warn("attach successful");
@@ -151,7 +151,7 @@ public class TagDAO extends HibernateDaoSupport {
 	}
 
 	public void attachClean(DAMTag instance) {
-		log.warn("attaching clean DAMTag instance");
+		log.debug("attaching clean DAMTag instance");
 		try {
 			getHibernateTemplate().lock(instance, LockMode.NONE);
 			log.warn("attach successful");

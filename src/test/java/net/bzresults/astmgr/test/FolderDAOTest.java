@@ -45,8 +45,6 @@ public class FolderDAOTest extends TestCase {
 	}
 
 	public void testSave() {
-		// this won't work
-		// assertEquals(folderMngr.findById(localFolderToTestSave.getId()),localFolderToTestSave);
 		assertNotNull(folderMngr.findById(localFolderToTest.getId()));
 	}
 
@@ -58,43 +56,36 @@ public class FolderDAOTest extends TestCase {
 
 	public void testFindById() {
 		DAMFolder folder = folderMngr.findById(localFolderToTest.getId());
-		log.warn(folder);
 		assertNotNull(folder);
 	}
 
 	public void testFindByExample() {
 		List folders = folderMngr.findByExample(localFolderToTest);
-		log.warn(folders);
 		assertNotNull(folders);
 	}
 
 	public void testFindByProperty() {
 		List folders = folderMngr.findByProperty(FolderDAO.NAME, localFolderToTest.getName());
-		log.warn(folders);
 		assertNotNull(folders);
 	}
 
 	public void testFindByValveId() {
 		List folders = folderMngr.findByValveId(localFolderToTest.getValveId());
-		log.warn(folders);
 		assertNotNull(folders);
 	}
 
 	public void testFindByClientId() {
 		List folders = folderMngr.findByClientId(localFolderToTest.getClientId());
-		log.warn(folders);
 		assertNotNull(folders);
 	}
 
 	public void testFindAll() {
 		List allFolders = folderMngr.findAll();
-		log.warn(allFolders);
 		assertNotNull(allFolders);
 	}
 
 	public void testGetRoot() {
 		DAMFolder root = folderMngr.getRoot(new Object[] { CLIENTID, VALVEID });
-		log.warn(root);
 		assertNotNull(root);
 		assertEquals(root.getName(), folderMngr.ROOTNAME);
 	}

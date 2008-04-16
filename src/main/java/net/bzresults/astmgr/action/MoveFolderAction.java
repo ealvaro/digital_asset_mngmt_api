@@ -20,11 +20,9 @@ public class MoveFolderAction implements IDAMAction {
 	}
 
 	public void execute() throws AssetManagerException, FileUploadException, IOException, Exception {
-		String folderName = request.getParameter("name");
-		String toFolderName = request.getParameter("toname");
-		if (toFolderName != null)
-			am.moveFolder(folderName, toFolderName);
-
+		Long folderId = Long.valueOf(request.getParameter("id"));
+		Long toFolderId = Long.valueOf(request.getParameter("toid"));
+		am.moveFolder(folderId, toFolderId);
 	}
 
 }

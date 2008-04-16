@@ -59,7 +59,7 @@ function showSessionInfo()
    msg += '<h4>Current Rooftop</h4>';
    msg += 'id: <c:choose><c:when test="${not empty rooftop}"><c:out value="${rooftop.id}"/></c:when><c:otherwise>no rooftop in session as key rooftop</c:otherwise></c:choose> <br/>';
    msg += 'name: <c:choose><c:when test="${not empty rooftop}"><c:out value="${rooftop.name}"/></c:when><c:otherwise>no rooftop in session as key rooftop</c:otherwise></c:choose> <br/>';
-   msg +='<h4>AssetManager</h4>';
+   msg += '<h4>AssetManager</h4>';
    <c:choose>
      <c:when test="${ empty sessionScope.am }">msg +='null';</c:when>
      <c:otherwise>
@@ -133,7 +133,7 @@ function showSessionInfo()
 				</li>
 				<li>
 					Call to
-					<b>moveFolder</b> requires name and toname param.
+					<b>moveFolder</b> requires id and toid param.
 					<br />
 					<blockquote>
 						- Folder name has to exist in current folder
@@ -141,18 +141,18 @@ function showSessionInfo()
 							<table>
 								<tr>
 									<td>
-										Folder Name:
+										Folder from Id:
 									</td>
 									<td>
-										<input type="text" name="moveFolderName" size="20" value="" />
+										<input type="text" name="moveFolderId" size="10" value="" />
 									</td>
 								</tr>
 								<tr>
 									<td>
-										Folder to move to:
+										Folder to Id:
 									</td>
 									<td>
-										<input type="text" name="moveToFolderName" size="20" value="" />
+										<input type="text" name="moveToFolderId" size="10" value="" />
 									</td>
 								</tr>
 								<tr>
@@ -167,30 +167,17 @@ function showSessionInfo()
 				</li>
 				<li>
 					Call to
-					<b>changeToFolder</b> requires name OR id param.
+					<b>changeToFolder</b> requires id param.
 					<br />
 					<blockquote>
 						<form style="padding: 6px 0">
 							<table>
 								<tr>
 									<td>
-										Folder Name:
-									</td>
-									<td>
-										<input type="text" name="changeToFolderName" size="20" value="testingfolder" />
-									</td>
-								</tr>
-								<tr>
-									<td>
-										or
-									</td>
-								</tr>
-								<tr>
-									<td>
 										Folder Id:
 									</td>
 									<td>
-										<input type="text" name="changeToFolderId" size="20" value="" />
+										<input type="text" name="changeToFolderId" size="10" value="" />
 									</td>
 								</tr>
 								<tr>
@@ -206,30 +193,17 @@ function showSessionInfo()
 				</li>
 				<li>
 					Call to
-					<b>deleteFolder</b> requires name OR id param.
+					<b>deleteFolder</b> requires id param.
 					<br />
 					<blockquote>
 						<form style="padding: 6px 0">
 							<table>
 								<tr>
 									<td>
-										Folder Name:
-									</td>
-									<td>
-										<input type="text" name="deleteFolderName" size="20" value="testingfolder" />
-									</td>
-								</tr>
-								<tr>
-									<td>
-										or
-									</td>
-								</tr>
-								<tr>
-									<td>
 										Folder Id:
 									</td>
 									<td>
-										<input type="text" name="deleteFolderId" size="20" value="" />
+										<input type="text" name="deleteFolderId" size="10" value="" />
 									</td>
 								</tr>
 								<tr>
@@ -237,6 +211,58 @@ function showSessionInfo()
 										&nbsp;
 										<input type="button" value="Call deleteFolder"
 											onclick="doDeleteFolderCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
+				</li>
+				<li>
+					Call to
+					<b>protectFolder</b> requires id param.
+					<br />
+					<blockquote>
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Folder Id:
+									</td>
+									<td>
+										<input type="text" name="protectFolderId" size="10" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										&nbsp;
+										<input type="button" value="Call protectFolder"
+											onclick="doProtectFolderCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
+				</li>
+				<li>
+					Call to
+					<b>unProtectFolder</b> requires id param.
+					<br />
+					<blockquote>
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Folder Id:
+									</td>
+									<td>
+										<input type="text" name="unProtectFolderId" size="10" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										&nbsp;
+										<input type="button" value="Call unProtectFolder"
+											onclick="doUnProtectFolderCall(this.form)" />
 									</td>
 								</tr>
 							</table>
@@ -257,7 +283,7 @@ function showSessionInfo()
 				</li>
 				<li>
 					Call to
-					<b>renameAsset</b> requires name and toname param.
+					<b>renameAsset</b> requires name and toname param (and to be the owner).
 					<br />
 					<blockquote>
 						- Asset has to exist in current folder
@@ -291,7 +317,7 @@ function showSessionInfo()
 				</li>
 				<li>
 					Call to
-					<b>deleteAsset</b> requires name param and should include ext.
+					<b>deleteAsset</b> requires name param (and to be the owner).
 					<br />
 					<blockquote>
 						<form style="padding: 6px 0">
@@ -300,6 +326,92 @@ function showSessionInfo()
 							&nbsp;
 							<input type="button" value="Call deleteAsset"
 								onclick="doDeleteAssetCall(this.form)" />
+						</form>
+					</blockquote>
+				</li>
+				<li>
+					Call to
+					<b>protectAsset</b> requires asset name param (and to be the owner).
+					<br />
+					<blockquote>
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Asset Name:
+									</td>
+									<td>
+										<input type="text" name="protectAssetName" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										&nbsp;
+										<input type="button" value="Call protectAsset"
+											onclick="doProtectAssetCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
+				</li>
+				<li>
+					Call to
+					<b>unProtectAsset</b> requires asset name param (and to be the owner).
+					<br />
+					<blockquote>
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Asset Name:
+									</td>
+									<td>
+										<input type="text" name="unProtectAssetName" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										&nbsp;
+										<input type="button" value="Call unprotectAsset"
+											onclick="doUnProtectAssetCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
+				</li>
+				<li>
+					Call to
+					<b>moveAsset</b> requires name for the asset and id for the folder.
+					<br />
+					<blockquote>
+						- Folder name has to exist in current folder
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Asset name to move (from current folder):
+									</td>
+									<td>
+										<input type="text" name="moveAssetName" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										Folder to Id:
+									</td>
+									<td>
+										<input type="text" name="moveToFolderId" size="10" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<input type="button" value="Call moveAssetFolder"
+											onclick="doMoveAssetToFolderCall(this.form)" />
+									</td>
+								</tr>
+							</table>
 						</form>
 					</blockquote>
 				</li>
