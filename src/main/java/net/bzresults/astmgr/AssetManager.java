@@ -17,9 +17,10 @@ import net.bzresults.astmgr.dao.TagDAO;
 import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
 import net.bzresults.astmgr.model.DAMTag;
-import net.bzresults.imageio.ImageHelper;
-import net.bzresults.util.CollectionUtils;
-import net.bzresults.util.ImageUtils;
+import net.bzresults.astmgr.utils.CollectionUtils;
+import net.bzresults.astmgr.utils.ImageUtils;
+import net.bzresults.imageio.scaling.HighQualityImageScaler;
+import net.bzresults.imageio.scaling.PreserveRatioAssetScaler;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.FileUtils;
@@ -27,12 +28,34 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.NonUniqueObjectException;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * @author escobara
+ *         <p>
+ *         Asset Manager has a root folder with assets and subfolders under it in a hierarchical structure 'ala' Windows
+ *         Explorer. It also has the knowledge of a current folder which is the folder currently being processed. All
+ *         Assets and Folders created will have an equivalent file and folder hierarchical structure in the O/S. Assets
+ *         can be tagged with free form values to facilitate their search and classification.
+ *         <p>
+ *         Asset Manager implements the following functions on Folders:
+ *         <p>
+ *         <ul>
+ *         <li>create user Folder</li>
+ *         <li>change to a Folder</li>
+ *         <li>change to parent Folder (stay in root Folder if already there)</li>
+ *         <li>create all Folders in a given path (if needed)</li>
+ *         </ul>
+ *         <p>
+ *         Asset Manager implements the following functions on Assets:
+ *         <p>
+ *         <ul>
+ *         <li>create an Asset, (uploading a file)</li>
+ *         <li>add an Asset Tag</li>
+ */
 public class AssetManager implements IAssetManager {
 
 	private static final String ROOTDIR = "/var/www/bzwebs/assets";
@@ -41,7 +64,6 @@ public class AssetManager implements IAssetManager {
 	// Default Tags
 	private static final String TITLE_TAG = "TITLE";
 	private static final String TYPE_TAG = "TYPE";
-	// Parameters for asset ownership
 
 	private ClassPathXmlApplicationContext factory;
 	private FolderDAO folderMngr;
@@ -88,7 +110,7 @@ public class AssetManager implements IAssetManager {
 			createAllSystemFolders();
 		}
 		this.currentFolder = getRoot();// current folder will be the root, by
-										// default.
+		// default.
 	}
 
 	private void createAllSystemFolders() {
@@ -258,13 +280,24 @@ public class AssetManager implements IAssetManager {
 	}
 
 	private void writeThumbnail(File file, String path) throws IOException {
-		if (ImageUtils.isImage(file.getName())) {
-			ImageHelper imager = new ImageHelper();
-			imager.load(file);
-			log.debug("Creating file thumbnail.");
-			// scale and save thumbnail
-			imager.scaleToFit(Constants.THUMBNAIL_DIMENSION);
-			imager.saveBuffer(new File(path, Constants.THUMBNAIL_PREFIX + FilenameUtils.getBaseName(file.getName())));
+		String filename = file.getName();
+		String extension = FilenameUtils.getExtension(filename);
+		String basename = FilenameUtils.getBaseName(filename);
+		if (ImageUtils.isImage(filename)) {
+			PreserveRatioAssetScaler it = new PreserveRatioAssetScaler(file, Constants.THUMBNAIL_DIMENSION,
+					new HighQualityImageScaler());
+			try {
+				File resultFile = it.scaleAndStoreAsFile(path, Constants.THUMBNAIL_PREFIX + basename, extension, false);
+			} catch (Exception e) {
+				throw new IOException("Error scaling and/or storing thumbnail");
+			}
+			// ImageHelper imager = new ImageHelper();
+			// imager.load(file);
+			// log.debug("Creating file thumbnail.");
+			// // scale and save thumbnail
+			// imager.scaleToFit(Constants.THUMBNAIL_DIMENSION);
+			// imager.saveBuffer(new File(path, Constants.THUMBNAIL_PREFIX +
+			// FilenameUtils.getBaseName(file.getName())));
 		}
 	}
 
@@ -326,8 +359,7 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#renameAsset(java.lang.String,
-	 *      java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#renameAsset(java.lang.String, java.lang.String)
 	 */
 	public void renameAsset(String oldFileName, String newFileName) {
 		if (currentFolder.getReadOnly() != DAMFolder.READONLY) {
@@ -532,8 +564,7 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#deleteAssetTagName(java.lang.String,
-	 *      java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#deleteAssetTagName(java.lang.String, java.lang.String)
 	 */
 	public void deleteAssetTagName(String assetName, String tagAttrib) {
 		if (!currentFolder.getAssetFiles().isEmpty()) {
@@ -556,8 +587,7 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#deleteAssetTagValue(java.lang.String,
-	 *      java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#deleteAssetTagValue(java.lang.String, java.lang.String)
 	 */
 	public void deleteAssetTagValue(String assetName, String tagValue) {
 		if (!currentFolder.getAssetFiles().isEmpty()) {
@@ -575,27 +605,21 @@ public class AssetManager implements IAssetManager {
 	}
 
 	/*
-	 * waltonl removed this method because, after putting cascade as
-	 * all-delete-orphans and inverse=true no need to have tagMngr delete the
-	 * tag after removing it from the dAMAsset's assetTags collection as it will
-	 * be done when the attachDirty on the asset is called. Doing it in both
-	 * places throws errors. After removing that line from here it only left one
-	 * real line .. so I just put that line in the deleteAssetTagValue and
-	 * deleteAssetTagName methods because it's better that the attachDirty call
-	 * clearly follow which isn't as clear when it's separated into another
-	 * method. That one line now in those methods which here was
-	 * dAMAsset.getAssetTags().remove(dAMTag) was changed to use a convenience
-	 * method in DAMAsset called removeTag which manages both sides of the
-	 * association as recommended in hibernate docs .. instead of only one side
-	 * as the lone call to: dAMAsset.getAssetTags().remove(dAMTag) does
+	 * waltonl removed this method because, after putting cascade as all-delete-orphans and inverse=true no need to have
+	 * tagMngr delete the tag after removing it from the dAMAsset's assetTags collection as it will be done when the
+	 * attachDirty on the asset is called. Doing it in both places throws errors. After removing that line from here it
+	 * only left one real line .. so I just put that line in the deleteAssetTagValue and deleteAssetTagName methods
+	 * because it's better that the attachDirty call clearly follow which isn't as clear when it's separated into
+	 * another method. That one line now in those methods which here was dAMAsset.getAssetTags().remove(dAMTag) was
+	 * changed to use a convenience method in DAMAsset called removeTag which manages both sides of the association as
+	 * recommended in hibernate docs .. instead of only one side as the lone call to:
+	 * dAMAsset.getAssetTags().remove(dAMTag) does
 	 * 
-	 * private void deleteTag(DAMAsset dAMAsset, DAMTag dAMTag) {
-	 * dAMAsset.getAssetTags().remove(dAMTag); // next line not needed with
-	 * cascade=all-delete-orphans because the // attachDirty on the asset that
-	 * happens when this call returns handles getting // it deleted and now
-	 * having this here throws // tagMngr.delete(dAMTag);
-	 * log.debug(this.currentClientId + ": Deleted tag '" +
-	 * dAMTag.getTagAttrib() + "' from asset '" + dAMAsset.getFileName() + "'"); }
+	 * private void deleteTag(DAMAsset dAMAsset, DAMTag dAMTag) { dAMAsset.getAssetTags().remove(dAMTag); // next line
+	 * not needed with cascade=all-delete-orphans because the // attachDirty on the asset that happens when this call
+	 * returns handles getting // it deleted and now having this here throws // tagMngr.delete(dAMTag);
+	 * log.debug(this.currentClientId + ": Deleted tag '" + dAMTag.getTagAttrib() + "' from asset '" +
+	 * dAMAsset.getFileName() + "'"); }
 	 */
 
 	private DAMTag findTagName(DAMAsset dAMAsset, String tagAttrib) {
@@ -623,8 +647,7 @@ public class AssetManager implements IAssetManager {
 	}
 
 	/*
-	 * TODO think about changing this to use a removeAllTags convenience method
-	 * in DAMAsset
+	 * TODO think about changing this to use a removeAllTags convenience method in DAMAsset
 	 */
 	private void deleteAllAssetTags(DAMAsset dAMAsset) {
 		Set<DAMTag> allTags = dAMAsset.getAssetTags();
@@ -816,8 +839,7 @@ public class AssetManager implements IAssetManager {
 	}
 
 	/*
-	 * waltonl recursive method to update paths of all subfolders when moving a
-	 * folder that has subfolders
+	 * waltonl recursive method to update paths of all subfolders when moving a folder that has subfolders
 	 */
 	private void setNewPathForFolder(DAMFolder folderToSet, String pathOfParent) {
 		folderToSet.setPath(pathOfParent + "/" + folderToSet.getName());
@@ -850,10 +872,12 @@ public class AssetManager implements IAssetManager {
 	public void changeToParent() {
 		// if it's not already the root
 		if (!currentFolder.getName().equals(FolderDAO.ROOTNAME)) {
-			currentFolder = currentFolder.getParentFolder();
+			DAMFolder parentFolder = currentFolder.getParentFolder();
 			// if it doesn't have a parent folder then change to root
-			if (currentFolder == null)
+			if (parentFolder == null)
 				currentFolder = this.getRoot();
+			else
+				currentFolder = folderMngr.findById(parentFolder.getId());
 			log.debug(this.currentClientId + ": Moved current folder to '" + currentFolder.getName() + "'");
 		}
 	}
@@ -976,8 +1000,7 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#addAssetTag(java.lang.String,
-	 *      java.lang.String, java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#addAssetTag(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	public void addAssetTag(String assetName, String tagName, String tagValue) {
 		if (tagName != null && !"".equals(tagName) && tagValue != null && !"".equals(tagValue)) {
@@ -1006,8 +1029,7 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#addAssetTag(java.lang.String,
-	 *      java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#addAssetTag(java.lang.String, java.lang.String)
 	 */
 	public void addAssetTag(String assetName, String tagValue) {
 		addAssetTag(assetName, XMLAssetManager.GENERAL_ASSET_TAG, tagValue);
@@ -1042,8 +1064,7 @@ public class AssetManager implements IAssetManager {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see net.bzresults.astmgr.IAssetManager#findAssetsByTag(java.lang.String,
-	 *      java.lang.String)
+	 * @see net.bzresults.astmgr.IAssetManager#findAssetsByTag(java.lang.String, java.lang.String)
 	 */
 	public void findAssetsByTag(String tagName, String tagValue) {
 		if (tagName != null && !"".equals(tagName) && tagValue != null && !"".equals(tagValue))
@@ -1080,30 +1101,20 @@ public class AssetManager implements IAssetManager {
 	}
 
 	/**
-	 * @author waltonl
-	 * 
-	 * Creates a DAMAsset (dam_assets) record for an asset that was already
-	 * created on the file system if it doesn't already have a DAMAsset record.
-	 * Meant for our tools to use when creating assets like AdBuilder's compiled
-	 * swf's. NOTE: this will change the state of currentFolder if needed, to
-	 * the folderPath passed in.
-	 * 
-	 * NOTE: if someday use this for registering more than our adbuilder swfs
-	 * might want to include a call to writeThumbnail in ?
-	 * 
+	 * @author waltonl Creates a DAMAsset (dam_assets) record for an asset that was already created on the file system
+	 *         if it doesn't already have a DAMAsset record. Meant for our tools to use when creating assets like
+	 *         AdBuilder's compiled swf's. NOTE: this will change the state of currentFolder if needed, to the
+	 *         folderPath passed in. NOTE: if someday use this for registering more than our adbuilder swfs might want
+	 *         to include a call to writeThumbnail in ?
 	 * @param folderPath
-	 *            a String representing the full path of the folder the asset to
-	 *            be registered is in. NOTE: folderPath should be one that has
-	 *            already been created if needed by calling
-	 *            createAllFoldersInPathIfNeeded
+	 *            a String representing the full path of the folder the asset to be registered is in. NOTE: folderPath
+	 *            should be one that has already been created if needed by calling createAllFoldersInPathIfNeeded
 	 * @param assetName
-	 *            the String file name for the asset being registered. The asset
-	 *            should already exist in the folder represented by folderPath.
-	 *            It is ok if the asset was already registered, which would be
-	 *            the case if an ad was edited and resaved.
+	 *            the String file name for the asset being registered. The asset should already exist in the folder
+	 *            represented by folderPath. It is ok if the asset was already registered, which would be the case if an
+	 *            ad was edited and resaved.
 	 * @param readOnly
 	 *            Byte representing whether the asset should be readOnly
-	 * 
 	 * @throws AssetManagerException
 	 */
 	public void registerCreatedAsset(String folderPath, String assetName, Byte readOnly) throws AssetManagerException {
@@ -1145,18 +1156,13 @@ public class AssetManager implements IAssetManager {
 	}
 
 	/**
-	 * @author waltonl
-	 * 
-	 * creates any folders in the folderPath passed that do not already exist
-	 * Note: Any app (like adbuilder) should call this to get folders created
-	 * both in db and file system rather than creating the file system folders
-	 * itself for any folders under asset manager control, due to the way
-	 * writeFolder is implemented to throw error if folder already exists.
-	 * 
+	 * @author waltonl creates any folders in the folderPath passed that do not already exist Note: Any app (like
+	 *         adbuilder) should call this to get folders created both in db and file system rather than creating the
+	 *         file system folders itself for any folders under asset manager control, due to the way writeFolder is
+	 *         implemented to throw error if folder already exists.
 	 * @param folderPath
-	 *            a String path where the asset that has already been created on
-	 *            the file system is located. Note: it must start with the path
-	 *            that represents the root for the AssetManager object created.
+	 *            a String path where the asset that has already been created on the file system is located. Note: it
+	 *            must start with the path that represents the root for the AssetManager object created.
 	 * @param readOnly
 	 *            Byte representing whether the folder should be readOnly
 	 * @param system
