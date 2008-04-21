@@ -65,6 +65,7 @@ function showSessionInfo()
      <c:otherwise>
       msg += 'currentClientId: ${am.currentClientId} &nbsp;';
       msg += 'currentValveId: ${am.currentValveId} &nbsp;';
+      msg += 'currentUserId: ${am.ownerId} &nbsp;';
       msg += 'current folder id: ${am.currentFolder.id}<br/>';
      </c:otherwise>
    </c:choose> 

@@ -3,8 +3,8 @@
  */
 package net.bzresults.imageio.scaling;
 
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -115,6 +115,10 @@ public class PreserveRatioAssetScaler {
     	this.scaleInfo = buildScaleInfo(desiredWidth, desiredHeight, origImgBuf.getWidth(), origImgBuf.getHeight());
     }
     
+    public PreserveRatioAssetScaler(File pathToOrigImg, Dimension dim, ImageScaler scaler) throws IllegalArgumentException, IOException {
+   	this(pathToOrigImg,(int)dim.getWidth(),(int)dim.getHeight(),scaler);
+    }
+
     /**
      * scales the original image passed into constructor if scaling is needed to meet
      * the desiredWidth and desiredHeight passed in to constructor. 
