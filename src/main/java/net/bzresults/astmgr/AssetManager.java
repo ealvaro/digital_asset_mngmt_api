@@ -59,6 +59,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AssetManager implements IAssetManager {
 
 	private static final String ROOTDIR = "/var/www/bzwebs/assets";
+	private static final String BZROOTDIR = "/var/www/bzwebs/apec";
 	public static String CONFIG_FILE_LOCATION = "/applicationContext.xml";
 	private static final Log log = LogFactory.getLog(AssetManager.class);
 	// Default Tags
@@ -109,8 +110,7 @@ public class AssetManager implements IAssetManager {
 		if (this.currentFolder == null) {
 			createAllSystemFolders();
 		}
-		this.currentFolder = getRoot();// current folder will be the root, by
-		// default.
+		this.currentFolder = getRoot();//current folder will be the root, by default.
 	}
 
 	private void createAllSystemFolders() {
@@ -716,8 +716,7 @@ public class AssetManager implements IAssetManager {
 
 	private void createFolder(DAMFolder dAMFolder) throws AssetManagerException, IOException {
 		if (dAMFolder.getName() != null && !"".equals(dAMFolder.getName())) {
-			// try creating the folder in the O/S first. If something goes
-			// wrong,
+			// try creating the folder in the O/S first. If something goes wrong,
 			// will throw AssetManagerException and won't create it in DAM db.
 			writeFolder(dAMFolder);
 			currentFolder.addSubFolder(dAMFolder);
@@ -1005,7 +1004,7 @@ public class AssetManager implements IAssetManager {
 	public void addAssetTag(String assetName, String tagName, String tagValue) {
 		if (tagName != null && !"".equals(tagName) && tagValue != null && !"".equals(tagValue)) {
 			if (assetName != null && !"".equals(assetName)) {
-				if (currentFolder.getReadOnly() != DAMFolder.READONLY) {
+				if (!currentFolder.getReadOnly().equals(DAMFolder.READONLY)) {
 					DAMAsset damAsset = findAssetInCurrentFolder(currentFolder, assetName);
 					if (damAsset != null) {
 						DAMTag damTag = new DAMTag(damAsset, tagName.toUpperCase(), tagValue);
@@ -1100,6 +1099,24 @@ public class AssetManager implements IAssetManager {
 		return virtualFolder;
 	}
 
+	private DAMFolder createVirtualFolderFromOSFolder(String folderName, String description, String tagName,
+			String tagValue) {
+		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId, currentClientId,
+				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0),
+				new HashSet<DAMFolder>(0));
+		List<DAMTag> tagList = tagMngr.getTagsByAttribValue(tagName, tagValue);
+		Set<DAMAsset> as = new HashSet<DAMAsset>(0);
+		for (DAMTag t : tagList) {
+			DAMAsset asset = t.getAssetId();
+			if (asset.getClientId().equals(currentClientId) && asset.getValveId().equals(currentValveId))
+				as.add(asset);
+		}
+		virtualFolder.setAssetFiles(as);
+		log.debug(this.currentClientId + ": Searched for Assets '" + tagName + "'='" + tagValue + "' and found "
+				+ as.size() + " Assets");
+		return virtualFolder;
+	}
+
 	/**
 	 * @author waltonl Creates a DAMAsset (dam_assets) record for an asset that was already created on the file system
 	 *         if it doesn't already have a DAMAsset record. Meant for our tools to use when creating assets like
@@ -1126,18 +1143,13 @@ public class AssetManager implements IAssetManager {
 			List<DAMFolder> folders = folderMngr.findByProperty(FolderDAO.PATH, folderPath);
 			if (CollectionUtils.isEmpty(folders)) {
 				throw new AssetManagerException("Parameter folderPath given, " + folderPath + ", does not exist. "
-						+ "It must already exist within AssetManager");
+						+ "It must already exist within Digital Asset Manager");
 			}
 			DAMFolder folder = folders.get(0);
 			changeToFolder(folder.getId());
 		}
-
-		// notes: we're allowed to register stuff in a "read only" folder (end
-		// user's aren't)
-		// also, we may have just overwritten a version of an asset that was
-		// already present
-		// so we don't do anything if it's already present ... it's not an error
-
+		// notes: we're allowed to register stuff in a "read only" folder (end user's aren't) also, we may overwrite
+		// an asset already present so we only update the upload date when it's already present ... it's not an error
 		DAMAsset existingAsset = findAssetInCurrentFolder(currentFolder, assetName);
 		Date fileDate = new Date(System.currentTimeMillis());
 		if (existingAsset == null) {

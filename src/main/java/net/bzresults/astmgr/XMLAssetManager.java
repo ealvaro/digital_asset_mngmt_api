@@ -26,23 +26,29 @@ public class XMLAssetManager {
 	public static final String GENERAL_ASSET_TAG = "GEN";
 
 	public static void sendXMLStructure(PrintWriter out, DAMFolder currentFolder, String valveid) {
+		TransformerHandler hd = initHandler(out);
+		try {
+			hd.startDocument();
+			createXMLFolderHierarchy(hd, currentFolder, valveid);
+			hd.endDocument();
+		} catch (SAXException se) {
+		}
+	}
+
+	private static TransformerHandler initHandler(PrintWriter out) {
 		StreamResult streamResult = new StreamResult(out);
 		SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+		TransformerHandler hd = null;
 		// SAX2.0 ContentHandler.
 		try {
-			TransformerHandler hd = tf.newTransformerHandler();
+			hd = tf.newTransformerHandler();
 			Transformer serializer = hd.getTransformer();
 			serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 			serializer.setOutputProperty(OutputKeys.INDENT, "yes");
 			hd.setResult(streamResult);
-			try {
-				hd.startDocument();
-				createXMLFolderHierarchy(hd, currentFolder, valveid);
-				hd.endDocument();
-			} catch (SAXException se) {
-			}
 		} catch (TransformerConfigurationException tce) {
 		}
+		return hd;
 	}
 
 	/**
@@ -54,6 +60,7 @@ public class XMLAssetManager {
 			throws SAXException {
 		createFolderTag(hd, currentFolder);
 		if (currentFolder != null) {
+			createAssetsTag(hd, currentFolder);
 			Iterator folderIterator = currentFolder.getSubFolders().iterator();
 			while (folderIterator.hasNext()) {
 				DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
@@ -61,7 +68,6 @@ public class XMLAssetManager {
 				if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE) && dAMFolder.getValveId().equals(valveid))
 					createXMLFolderHierarchy(hd, dAMFolder, valveid);
 			}
-			createAssetsTag(hd, currentFolder);
 		}
 		hd.endElement("", "", FOLDER_HTML_TAG);
 	}
@@ -90,37 +96,35 @@ public class XMLAssetManager {
 	}
 
 	public static void sendXMLResponse(PrintWriter out, DAMFolder currentFolder, String valveid) {
-		StreamResult streamResult = new StreamResult(out);
-		SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
-		// SAX2.0 ContentHandler.
+		TransformerHandler hd = initHandler(out);
 		try {
-			TransformerHandler hd = tf.newTransformerHandler();
-			Transformer serializer = hd.getTransformer();
-			serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-			serializer.setOutputProperty(OutputKeys.INDENT, "yes");
-			hd.setResult(streamResult);
-			try {
-				hd.startDocument();
-				createFolderTag(hd, currentFolder);
-				createAssetsTag(hd, currentFolder);
-				Iterator folderIterator = currentFolder.getSubFolders().iterator();
-				if (folderIterator != null)
-					while (folderIterator.hasNext()) {
-						DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
-						// FOLDER tag.
-						if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE) && dAMFolder.getValveId().equals(valveid)) {
-							createFolderTag(hd, dAMFolder);
-							hd.endElement("", "", FOLDER_HTML_TAG);
-						}
+			hd.startDocument();
+			createFolderTag(hd, currentFolder);
+			createAssetsTag(hd, currentFolder);
+			Iterator folderIterator = currentFolder.getSubFolders().iterator();
+			if (folderIterator != null)
+				while (folderIterator.hasNext()) {
+					DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
+					// FOLDER tag.
+					if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE) && dAMFolder.getValveId().equals(valveid)) {
+						createFolderTag(hd, dAMFolder);
+						hd.endElement("", "", FOLDER_HTML_TAG);
 					}
-				// hd.endElement("", "", "subfolders");
-				hd.endElement("", "", FOLDER_HTML_TAG);
-				hd.endDocument();
-			} catch (SAXException se) {
+				}
+			// hd.endElement("", "", "subfolders");
+			hd.endElement("", "", FOLDER_HTML_TAG);
+			hd.endDocument();
+		} catch (SAXException se) {
+		}
+	}
 
-			}
-		} catch (TransformerConfigurationException tce) {
-
+	public static void sendShortXMLResponse(PrintWriter out, DAMFolder currentFolder) {
+		TransformerHandler hd = initHandler(out);
+		try {
+			hd.startDocument();
+			createAssetsTag(hd, currentFolder);
+			hd.endDocument();
+		} catch (SAXException se) {
 		}
 	}
 
@@ -138,9 +142,7 @@ public class XMLAssetManager {
 					}
 				hd.endElement("", "", ASSETS_HTML_TAG);
 			} catch (SAXException se) {
-
 			}
-
 	}
 
 	private static void createAssetTag(TransformerHandler hd, DAMAsset dAMAsset) throws SAXException {
@@ -177,29 +179,17 @@ public class XMLAssetManager {
 	}
 
 	public static void sendXMLMsg(PrintWriter out, String tagXML, String errorMsg) {
-		StreamResult streamResult = new StreamResult(out);
-		SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
-		// SAX2.0 ContentHandler.
+		TransformerHandler hd = initHandler(out);
 		try {
-			TransformerHandler hd = tf.newTransformerHandler();
-			Transformer serializer = hd.getTransformer();
-			serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-			serializer.setOutputProperty(OutputKeys.INDENT, "yes");
-			hd.setResult(streamResult);
-			try {
-				hd.startDocument();
-				AttributesImpl atts = new AttributesImpl();
-				// FOLDER tag.
-				atts.clear();
-				atts.addAttribute("", "", "description", "CDATA", errorMsg);
-				hd.startElement("", "", tagXML, atts);
-				hd.endElement("", "", tagXML);
-				hd.endDocument();
-			} catch (SAXException se) {
-
-			}
-		} catch (TransformerConfigurationException tce) {
-
+			hd.startDocument();
+			AttributesImpl atts = new AttributesImpl();
+			// FOLDER tag.
+			atts.clear();
+			atts.addAttribute("", "", "description", "CDATA", errorMsg);
+			hd.startElement("", "", tagXML, atts);
+			hd.endElement("", "", tagXML);
+			hd.endDocument();
+		} catch (SAXException se) {
 		}
 	}
 

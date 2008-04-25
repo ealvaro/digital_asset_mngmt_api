@@ -1,7 +1,5 @@
 package net.bzresults.astmgr.services;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -11,12 +9,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import net.bzresults.astmgr.AllFilesFilter;
 import net.bzresults.astmgr.AssetManager;
 import net.bzresults.astmgr.AssetManagerException;
 import net.bzresults.astmgr.Constants;
 import net.bzresults.astmgr.XMLAssetManager;
 import net.bzresults.astmgr.action.AddAssetTagAction;
+import net.bzresults.astmgr.action.BrowseBZAssetsAction;
 import net.bzresults.astmgr.action.ChangeToFolderAction;
 import net.bzresults.astmgr.action.ChangeToParentAction;
 import net.bzresults.astmgr.action.CreateAssetAction;
@@ -40,8 +38,6 @@ import net.bzresults.astmgr.action.UnProtectFolderAction;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
 
 public class AssetManagerServlet extends HttpServlet {
 	private static final long serialVersionUID = -6204882870976083593L;
@@ -69,7 +65,6 @@ public class AssetManagerServlet extends HttpServlet {
 
 	/**
 	 * The doGet method of the servlet. <br>
-	 * 
 	 * This method is called when a form has its tag value method equals to get.
 	 * 
 	 * @param request
@@ -130,19 +125,19 @@ public class AssetManagerServlet extends HttpServlet {
 		} else {
 			try {
 				processAction(request, am, action);
-				// http://localhost:8080/damw/servlet/assetmanager?action=closeSession
+				// ?action=closeSession
 				if (action.equals("closeSession")) {
 					XMLAssetManager.sendXMLMsg(out, MSG_TAG, "Session for clientid:" + am.getCurrentClientId()
 							+ " has been closed.");
 					am = null;
 					session.setAttribute(AM_PARAM, am);
 				} else
-						XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder(), am.getCurrentValveId());
+					processResponse(out, am, action);
 			} catch (AssetManagerException ame) {
 				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
 			} catch (FileUploadException fue) {
-					XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:"
-							+ am.getCurrentClientId() + " had an error.");
+				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:" + am.getCurrentClientId()
+						+ " had an error.");
 			} catch (Exception e) {
 				e.printStackTrace();
 				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error: " + e.getMessage() + " \ncurrent client id: "
@@ -179,9 +174,6 @@ public class AssetManagerServlet extends HttpServlet {
 	private void processAction(HttpServletRequest request, AssetManager am, String action) throws FileUploadException,
 			IOException, Exception, AssetManagerException {
 		IDAMAction damAction = null;
-		if (action.equals("browseBZAssets")) {
-			getBZFolderContents(request.getParameter("currentBZFolder"));
-		}
 		// ?action=createUserFolder&name=testingfolder
 		if (action.equals("createUserFolder")) {
 			damAction = new CreateUserFolderAction(request, am);
@@ -257,57 +249,33 @@ public class AssetManagerServlet extends HttpServlet {
 		// ?action=findAssetsByTag&tag=make&value=Ford
 		if (action.equals("findAssetsByTag")) {
 			damAction = new FindAssetsByTagAction(request, am);
+		} else
+		// ?action=browseBZAssets
+		if (action.equals("browseBZAssets")) {
+			damAction = new BrowseBZAssetsAction(request, am);
 		}
 		if (damAction != null)
 			damAction.execute();
 	}
 
-	public String getBZFolderContents(String folder) {
-		String root = "/var/www/bzwebs/assets/bz";
-		if (folder != null) {
-			folder = root + "/" + folder;
-		} else {
-			folder = root;
+	private void processResponse(PrintWriter out, AssetManager am, String action) {
+		IDAMAction damAction = null;
+		if (action.equals("createUserFolder") || action.equals("moveFolder") || action.equals("changeToFolder")
+				|| action.equals("createAsset") || action.equals("renameAsset") || action.equals("moveAsset")
+				|| action.equals("protectAsset") || action.equals("unprotectAsset") || action.equals("protectFolder")
+				|| action.equals("unprotectFolder") || action.equals("deleteFolder") || action.equals("deleteAsset")
+				|| action.equals("changeToParent") || action.equals("queryFolder") || action.equals("findAssetsByName")
+				|| action.equals("findAssetsByTag") || action.equals("browseBZAssets")) {
+			XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder(), am.getCurrentValveId());
+		} else if (action.equals("addAssetTag") || action.equals("deleteAssetTagName")
+				|| action.equals("deleteAssetTagValue")) {
+			XMLAssetManager.sendShortXMLResponse(out, am.getCurrentFolder());
 		}
-
-		File folderList = new File(folder);
-
-		FileFilter filter = new AllFilesFilter();
-		File[] listing = folderList.listFiles(filter);
-		org.dom4j.Document dom = org.dom4j.DocumentHelper.createDocument(DocumentHelper.createElement("folder"));
-
-		for (File item : listing) {
-			if (item.isDirectory())
-				dom.getRootElement().add(createFolderElement(item));
-
-			else
-				dom.getRootElement().add(createFileElement(item));
-		}
-
-		return dom.asXML();
-	}
-
-	public Element createFolderElement(File file) {
-		Element element = DocumentHelper.createElement("folder");
-		element.addAttribute("name", file.getName());
-
-		return element;
-
-	}
-
-	public Element createFileElement(File file) {
-		Element element = DocumentHelper.createElement("asset");
-		element.addAttribute("file_name", file.getName());
-
-		return element;
-
 	}
 
 	/**
 	 * The doPost method of the servlet. <br>
-	 * 
-	 * This method is called when a form has its tag value method equals to
-	 * post.
+	 * This method is called when a form has its tag value method equals to post.
 	 * 
 	 * @param request
 	 *            the request send by the client to the server
