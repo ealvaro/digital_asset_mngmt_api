@@ -87,7 +87,7 @@ public class FolderDAOTest extends TestCase {
 	public void testGetRoot() {
 		DAMFolder root = folderMngr.getRoot(new Object[] { CLIENTID, VALVEID });
 		assertNotNull(root);
-		assertEquals(root.getName(), folderMngr.ROOTNAME);
+		assertEquals(root.getName(), DAMFolder.ROOTNAME);
 	}
 
 }

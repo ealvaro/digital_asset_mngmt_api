@@ -11,7 +11,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import net.bzresults.astmgr.dao.FolderDAO;
 import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
 import net.bzresults.astmgr.model.DAMTag;
@@ -84,7 +83,7 @@ public class XMLAssetManager {
 			atts.addAttribute("", "", "description", "CDATA", currentFolder.getDescription());
 			atts.addAttribute("", "", "format", "CDATA", currentFolder.getFormat());
 			// Client id is displayed at the root level only
-			if (currentFolder.getName().equals(FolderDAO.ROOTNAME)) {
+			if (currentFolder.getName().equals(DAMFolder.ROOTNAME)) {
 				atts.addAttribute("", "", "clientid", "CDATA", currentFolder.getClientId().toString());
 				atts.addAttribute("", "", "valveid", "CDATA", currentFolder.getValveId());
 			}
@@ -192,13 +191,4 @@ public class XMLAssetManager {
 		} catch (SAXException se) {
 		}
 	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
-
 }

@@ -15,14 +15,15 @@ import net.bzresults.astmgr.model.DAMFolder;
 public class DAMFolder implements java.io.Serializable {
 
 	private static final long serialVersionUID = 1997920937639972L;
-	// Fields
 	public static final Byte VISIBLE = Byte.valueOf("0");
 	public static final Byte INVISIBLE = Byte.valueOf("1");
 	public static final Byte WRITABLE = Byte.valueOf("0");
 	public static final Byte READONLY = Byte.valueOf("1");
 	public static final Byte NOT_SYSTEM = Byte.valueOf("0");
 	public static final Byte SYSTEM = Byte.valueOf("1");
-
+	public static final String ROOTNAME = "ROOT";
+	public static final String ALL_VALVES = "*";
+	// Fields
 	private Long id;
 	private DAMFolder parentFolder;
 	private String description;
@@ -242,6 +243,7 @@ public class DAMFolder implements java.io.Serializable {
 	}
 	
 	public void addAsset(DAMAsset damAsset) {
+		if (this.getName().equals(ROOTNAME)) damAsset.setValveId(ALL_VALVES);
 		damAsset.setFolder(this);
 		this.assetFiles.add(damAsset);
 	}

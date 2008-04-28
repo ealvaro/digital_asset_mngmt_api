@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.servlet.ServletException;
 
 import junit.framework.TestCase;
+import net.bzresults.astmgr.Constants;
 import net.bzresults.astmgr.services.AssetManagerServlet;
 
 import org.apache.commons.logging.Log;
@@ -38,9 +39,12 @@ public class AssetManagerServletTest extends TestCase {
 		try {
 			mockHttpServletRequest = new MockHttpServletRequest("GET", "/dam/damsvc");
 			// http://localhost:8087/dam/damsvc?clientid=20
-			mockHttpServletRequest.setParameter("clientid", "20");
+			mockHttpServletRequest.setParameter(Constants.CLIENT_KEY, "20");
+			mockHttpServletRequest.setParameter(Constants.VALVE_KEY, "V31A");
+			mockHttpServletRequest.setParameter(Constants.BCC_USER_KEY, "1");
 			amserv.doGet(mockHttpServletRequest, mockHttpServletResponse = new MockHttpServletResponse());
 			log.debug(mockHttpServletResponse.getContentAsString());
+			//TODO Update all the http calls to the new DAM Functions
 			// http://localhost:8087/dam/damsvc?action=createUserFolder&name=testingfolder
 			mockHttpServletRequest.setParameter("action", "createUserFolder");
 			mockHttpServletRequest.setParameter("name", "testingfolder");
@@ -110,9 +114,11 @@ public class AssetManagerServletTest extends TestCase {
 		MockHttpServletResponse mockHttpServletResponse = null;
 		AssetManagerServlet amserv = new AssetManagerServlet();
 		try {
-			mockHttpServletRequest = new MockHttpServletRequest("POST", "/dam/dam");
+			mockHttpServletRequest = new MockHttpServletRequest("POST", "/dam/damsvc");
 			// http://localhost:8087/dam/damsvc?clientid=20
-			mockHttpServletRequest.setParameter("clientid", "20");
+			mockHttpServletRequest.setParameter(Constants.CLIENT_KEY, "20");
+			mockHttpServletRequest.setParameter(Constants.VALVE_KEY, "V31A");
+			mockHttpServletRequest.setParameter(Constants.BCC_USER_KEY, "1");
 			amserv.doPost(mockHttpServletRequest, mockHttpServletResponse = new MockHttpServletResponse());
 			log.debug(mockHttpServletResponse.getContentAsString());
 			// http://localhost:8087/dam/damsvc?action=createAsset&name1=JUnit%20Test%20Asset.jpg&file1=%2FJUnit%20Test%20Asset.jpg

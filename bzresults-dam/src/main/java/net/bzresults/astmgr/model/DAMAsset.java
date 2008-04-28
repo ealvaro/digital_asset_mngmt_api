@@ -14,6 +14,7 @@ public class DAMAsset implements java.io.Serializable {
 	private static final long serialVersionUID = 459564398674L;
 	public static final Byte WRITABLE = Byte.valueOf("0");
 	public static final Byte READONLY = Byte.valueOf("1");
+	public static final String ALL_VALVES = "*";
 
 	// Fields
 	private Long id;

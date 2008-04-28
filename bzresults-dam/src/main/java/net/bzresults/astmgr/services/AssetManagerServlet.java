@@ -259,7 +259,6 @@ public class AssetManagerServlet extends HttpServlet {
 	}
 
 	private void processResponse(PrintWriter out, AssetManager am, String action) {
-		IDAMAction damAction = null;
 		if (action.equals("createUserFolder") || action.equals("moveFolder") || action.equals("changeToFolder")
 				|| action.equals("createAsset") || action.equals("renameAsset") || action.equals("moveAsset")
 				|| action.equals("protectAsset") || action.equals("unprotectAsset") || action.equals("protectFolder")
