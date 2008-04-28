@@ -32,9 +32,7 @@ public class FolderDAO extends HibernateDaoSupport {
 	public static final String SYSTEM = "system";
 	public static final String CREATE_DATE = "createDate";
 	public static final String PATH = "path";
-	public static final String ROOTNAME = "ROOT";
-	public static final String ALL_VALVES = "*";
-	private static final String[] CRITERIA_PARAMS = {FolderDAO.CLIENT_ID,FolderDAO.VALVE_ID};
+	private static final String[] CRITERIA_PARAMS = { FolderDAO.CLIENT_ID, FolderDAO.VALVE_ID };
 
 	protected void initDao() {
 		// do nothing
@@ -86,12 +84,11 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	/**
-	 * 
 	 * @param propertyName
 	 * @param value
 	 * @return
 	 */
-	//TODO this method is not safe to call unless clientid and valveid are included in the query.
+	// TODO this method is not DAM safe to call unless clientid and valveid are included in the query.
 	public List findByProperty(String propertyName, Object value) {
 		log.debug("finding DAMFolder instance with property: " + propertyName + ", value: " + value);
 		try {
@@ -108,23 +105,23 @@ public class FolderDAO extends HibernateDaoSupport {
 	}
 
 	public DAMFolder getRoot(Object[] values) {
-		return getFolder(values, FolderDAO.ROOTNAME);
+		return getFolder(values, DAMFolder.ROOTNAME);
 	}
 
 	private DAMFolder getFolder(Object[] values, String folderName) {
 		log.debug("finding Folder instance with  " + FolderDAO.NAME + "=" + folderName);
-		if (folderName.equals(FolderDAO.ROOTNAME)) values[1] = ALL_VALVES;
+		if (folderName.equals(DAMFolder.ROOTNAME))
+			values[1] = DAMFolder.ALL_VALVES;
 		try {
-			String queryString = "from DAMFolder as model where " + 
-			"model." + CRITERIA_PARAMS[0] + " = "+ values[0] +
-			" AND model." + CRITERIA_PARAMS[1] + "= '" + values[1] + 
-			"' AND model."	+ FolderDAO.NAME + "='" + folderName + "'";
+			String queryString = "from DAMFolder as model where " + "model." + CRITERIA_PARAMS[0] + " = " + values[0]
+					+ " AND model." + CRITERIA_PARAMS[1] + "= '" + values[1] + "' AND model." + FolderDAO.NAME + "='"
+					+ folderName + "'";
 			// If a unique one is needed call the other getFolder function with id parameter.
 			// I know there is a find() method with value[] as parameter but this way was faster
 			return (DAMFolder) getHibernateTemplate().find(queryString).get(0);
 		} catch (IndexOutOfBoundsException ioobe) {
-			log.error("find folder: " + CRITERIA_PARAMS[0] + "='" + values[0] + "' & " + FolderDAO.NAME + "='" + folderName
-					+ "' failed");
+			log.error("find folder: " + CRITERIA_PARAMS[0] + "='" + values[0] + "' & " + FolderDAO.NAME + "='"
+					+ folderName + "' failed");
 			return null;
 		} catch (RuntimeException re) {
 			log.error("find by property name failed", re);

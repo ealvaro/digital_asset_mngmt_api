@@ -110,7 +110,7 @@ public class AssetManager implements IAssetManager {
 		if (this.currentFolder == null) {
 			createAllSystemFolders();
 		}
-		this.currentFolder = getRoot();//current folder will be the root, by default.
+		this.currentFolder = getRoot();// current folder will be the root, by default.
 	}
 
 	private void createAllSystemFolders() {
@@ -135,7 +135,7 @@ public class AssetManager implements IAssetManager {
 
 	private void createRootFolder() {
 		String path = getRootDir() + "/" + this.currentClientId;
-		DAMFolder rootFolder = new DAMFolder(null, FolderDAO.ROOTNAME, FolderDAO.ROOTNAME, "*.*", FolderDAO.ALL_VALVES,
+		DAMFolder rootFolder = new DAMFolder(null, DAMFolder.ROOTNAME, DAMFolder.ROOTNAME, "*.*", DAMFolder.ALL_VALVES,
 				currentClientId, DAMFolder.INVISIBLE, DAMFolder.WRITABLE, DAMFolder.SYSTEM, path, null, null);
 		this.currentFolder = rootFolder;
 		this.currentFolder.setParentFolder(this.currentFolder);
@@ -192,7 +192,7 @@ public class AssetManager implements IAssetManager {
 						} else {
 							writeFile(localAsset, item, currentFolder.getPath());
 						}
-						currentFolder.getAssetFiles().add(localAsset);
+						currentFolder.addAsset(localAsset);
 						assetMngr.save(localAsset);
 						addDefaultAssetTags(localAsset);
 					} else
@@ -231,7 +231,6 @@ public class AssetManager implements IAssetManager {
 						Date fileDate = new Date(System.currentTimeMillis());
 						DAMAsset localAsset = new DAMAsset(null, assetName, currentValveId, fileDate, currentClientId,
 								DAMAsset.WRITABLE, ownerId);
-						localAsset.setFolder(currentFolder);
 						if (item == null) {
 							File inputfile = new File(filePathName);
 							MockMultipartFile multipartFile = new MockMultipartFile(filePathName, new FileInputStream(
@@ -426,6 +425,7 @@ public class AssetManager implements IAssetManager {
 									currentFolder.getPath(), dAMFolder.getPath());
 							if (moved && movedThumb) {
 								currentFolder.removeAsset(dAMAsset);
+								dAMAsset.setValveId(this.currentValveId);
 								dAMFolder.addAsset(dAMAsset);
 								assetMngr.attachDirty(dAMAsset);
 								folderMngr.attachDirty(dAMFolder);
@@ -693,7 +693,7 @@ public class AssetManager implements IAssetManager {
 	private void createFolder(String folderName, String description, String format, Byte readOnly, Byte system,
 			String path) throws AssetManagerException, IOException {
 		if (findFolderInCurrentFolder(currentFolder, folderName) == null) {
-			if (!folderName.equalsIgnoreCase(FolderDAO.ROOTNAME)) {
+			if (!folderName.equalsIgnoreCase(DAMFolder.ROOTNAME)) {
 				DAMFolder localFolder = new DAMFolder(currentFolder, description, folderName, format, currentValveId,
 						currentClientId, DAMFolder.VISIBLE, readOnly, system, path, new HashSet<DAMAsset>(0),
 						new HashSet<DAMFolder>(0));
@@ -870,7 +870,7 @@ public class AssetManager implements IAssetManager {
 	 */
 	public void changeToParent() {
 		// if it's not already the root
-		if (!currentFolder.getName().equals(FolderDAO.ROOTNAME)) {
+		if (!currentFolder.getName().equals(DAMFolder.ROOTNAME)) {
 			DAMFolder parentFolder = currentFolder.getParentFolder();
 			// if it doesn't have a parent folder then change to root
 			if (parentFolder == null)
@@ -1090,7 +1090,8 @@ public class AssetManager implements IAssetManager {
 		Set<DAMAsset> as = new HashSet<DAMAsset>(0);
 		for (DAMTag t : tagList) {
 			DAMAsset asset = t.getAssetId();
-			if (asset.getClientId().equals(currentClientId) && asset.getValveId().equals(currentValveId))
+			if (asset.getClientId().equals(currentClientId)
+					&& (asset.getValveId().equals(currentValveId) || asset.getValveId().equals(DAMFolder.ALL_VALVES)))
 				as.add(asset);
 		}
 		virtualFolder.setAssetFiles(as);

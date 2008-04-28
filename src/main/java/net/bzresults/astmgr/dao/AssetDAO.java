@@ -27,8 +27,8 @@ public class AssetDAO extends HibernateDaoSupport {
 	public static final String CLIENT_ID = "clientId";
 	public static final String READ_ONLY = "readOnly";
 	public static final String OWNER_ID = "ownerId";
-	public static final Long RECENT_CRITERIA = 60 * 60 * 1000L; //1 Hr. in milliseconds.
-	private static final String[] CRITERIA_PARAMS = {AssetDAO.CLIENT_ID,AssetDAO.VALVE_ID};
+	public static final Long RECENT_CRITERIA = 60 * 60 * 1000L; // 1 Hr. in milliseconds.
+	private static final String[] CRITERIA_PARAMS = { AssetDAO.CLIENT_ID, AssetDAO.VALVE_ID };
 
 	protected void initDao() {
 		// do nothing
@@ -59,8 +59,7 @@ public class AssetDAO extends HibernateDaoSupport {
 	public DAMAsset findById(java.lang.Long id) {
 		log.debug("getting DAMAsset instance with id: " + id);
 		try {
-			DAMAsset instance = (DAMAsset) getHibernateTemplate().get(
-					"net.bzresults.astmgr.model.DAMAsset", id);
+			DAMAsset instance = (DAMAsset) getHibernateTemplate().get("net.bzresults.astmgr.model.DAMAsset", id);
 			return instance;
 		} catch (RuntimeException re) {
 			log.error("get failed", re);
@@ -72,8 +71,7 @@ public class AssetDAO extends HibernateDaoSupport {
 		log.debug("finding DAMAsset instance by example");
 		try {
 			List results = getHibernateTemplate().findByExample(instance);
-			log.warn("find by example successful, result size: "
-					+ results.size());
+			log.warn("find by example successful, result size: " + results.size());
 			return results;
 		} catch (RuntimeException re) {
 			log.error("find by example failed", re);
@@ -82,11 +80,9 @@ public class AssetDAO extends HibernateDaoSupport {
 	}
 
 	public List findByProperty(String propertyName, Object value) {
-		log.debug("finding DAMAsset instance with property: " + propertyName
-				+ ", value: " + value);
+		log.debug("finding DAMAsset instance with property: " + propertyName + ", value: " + value);
 		try {
-			String queryString = "from DAMAsset as model where model."
-					+ propertyName + "= ?";
+			String queryString = "from DAMAsset as model where model." + propertyName + "= ?";
 			return getHibernateTemplate().find(queryString, value);
 		} catch (RuntimeException re) {
 			log.error("find by property name failed", re);
@@ -97,12 +93,13 @@ public class AssetDAO extends HibernateDaoSupport {
 	public List<DAMAsset> getRecentItems(Object[] values, Date createDate) {
 		log.debug("finding recently uploaded Assets with timestamp : " + createDate);
 		Date beforeDate = new Date();
-		beforeDate.setTime(createDate.getTime() - RECENT_CRITERIA );
+		beforeDate.setTime(createDate.getTime() - RECENT_CRITERIA);
 		log.debug("recent criteria used: upload_date >= '" + beforeDate.getTime() + "'");
 		try {
-			String queryString = "from DAMAsset as model where model." + CRITERIA_PARAMS[0] + " = "+ values[0] +
-			" AND model." + CRITERIA_PARAMS[1] + "= '" + values[1] + 
-			"' AND model." + AssetDAO.UPLOAD_DATE + ">= '" + beforeDate.getTime() + "'";
+			String queryString = "from DAMAsset as model where model." + CRITERIA_PARAMS[0] + " = " + values[0]
+					+ " AND (model." + CRITERIA_PARAMS[1] + "= '" + values[1] + "' OR model." + CRITERIA_PARAMS[1]
+					+ "= '" + DAMAsset.ALL_VALVES + "') AND model." + AssetDAO.UPLOAD_DATE + ">= '"
+					+ beforeDate.getTime() + "'";
 			return getHibernateTemplate().find(queryString);
 		} catch (RuntimeException re) {
 			log.error("find recently created assets failed", re);
@@ -111,7 +108,7 @@ public class AssetDAO extends HibernateDaoSupport {
 	}
 
 	public List findByFileName(String fileName) {
-//		return findByProperty(FILE_NAME, fileName);
+		// return findByProperty(FILE_NAME, fileName);
 		log.debug("finding DAMAsset instance with property name: like " + fileName);
 		try {
 			String queryString = "from DAMAsset as model where model." + FILE_NAME + " like '%" + fileName + "%'";
@@ -120,7 +117,7 @@ public class AssetDAO extends HibernateDaoSupport {
 			log.error("find by property name failed", re);
 			throw re;
 		}
-		
+
 	}
 
 	public List findByValveId(Object valveId) {
@@ -157,8 +154,7 @@ public class AssetDAO extends HibernateDaoSupport {
 	public DAMAsset merge(DAMAsset detachedInstance) {
 		log.debug("merging DAMAsset instance");
 		try {
-			DAMAsset result = (DAMAsset) getHibernateTemplate().merge(
-					detachedInstance);
+			DAMAsset result = (DAMAsset) getHibernateTemplate().merge(detachedInstance);
 			log.warn("merge successful");
 			return result;
 		} catch (RuntimeException re) {
