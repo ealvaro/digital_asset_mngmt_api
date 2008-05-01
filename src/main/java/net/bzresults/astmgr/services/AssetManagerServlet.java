@@ -56,14 +56,6 @@ public class AssetManagerServlet extends HttpServlet {
 	}
 
 	/**
-	 * Destruction of the servlet. <br>
-	 */
-	public void destroy() {
-		super.destroy(); // Just puts "destroy" string in log
-		// Put your code here
-	}
-
-	/**
 	 * The doGet method of the servlet. <br>
 	 * This method is called when a form has its tag value method equals to get.
 	 * 
@@ -82,10 +74,12 @@ public class AssetManagerServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		HttpSession session = request.getSession();
 		AssetManager am = (AssetManager) session.getAttribute(AM_PARAM);
-		// Client client = (Client) session.getAttribute(Constants.CLIENT_KEY);
+		//Client client = (Client) session.getAttribute(Constants.CLIENT_KEY);
+		//String strServerid = client.getServerid();
 		// Valve currentValve = (Valve) session.getAttribute(Constants.VALVE_KEY);
 		// ClientUser user = (ClientUser) session.getAttribute(Constants.BCC_USER_KEY);
 		// ClientUser user = WebHelper.getBccUser(request.getSession());
+		String strServerid = "paolaserver";
 		String strClient = request.getParameter(Constants.CLIENT_KEY);
 		String strValve = request.getParameter(Constants.VALVE_KEY);
 		String strUser = request.getParameter(Constants.BCC_USER_KEY);
@@ -118,7 +112,7 @@ public class AssetManagerServlet extends HttpServlet {
 				+ actionDebugStr + "\n am in session: " + amDebugStr + "\n" + amCurFolderDebugStr + "\n\n");
 
 		if (needToCreateAMSession(am, strClient, strValve)) {
-			am = createAMSession(session, out, strClient, strValve, strUser);
+			am = createAMSession(session, out, strClient, strValve, strUser, strServerid);
 		}
 		if (action == null || action.equals("")) {
 			XMLAssetManager.sendXMLStructure(out, am.getCurrentFolder(), am.getCurrentValveId());
@@ -157,11 +151,11 @@ public class AssetManagerServlet extends HttpServlet {
 	}
 
 	private AssetManager createAMSession(HttpSession session, PrintWriter out, String strClient, String strValve,
-			String strUser) {
+			String strUser, String strServerid) {
 		AssetManager am = null;
 		long clientId = Long.parseLong(strClient);
 		long cuserId = Long.parseLong(strUser);
-		am = new AssetManager(strValve, clientId, cuserId);
+		am = new AssetManager(strValve, clientId, cuserId, strServerid);
 		session.setAttribute(AM_PARAM, am);
 		session.setAttribute(Constants.CLIENT_KEY, clientId);
 		session.setAttribute(Constants.VALVE_KEY, strValve);

@@ -108,6 +108,14 @@ public class FolderDAO extends HibernateDaoSupport {
 		return getFolder(values, DAMFolder.ROOTNAME);
 	}
 
+	/**
+	 * @param folderName
+	 * @return a String that has replaced all single quotes within the folderName, with 2 single quotes.
+	 */
+	private String quoteQuote(String folderName) {
+		return folderName.replaceAll("'", "''");
+	}
+
 	private DAMFolder getFolder(Object[] values, String folderName) {
 		log.debug("finding Folder instance with  " + FolderDAO.NAME + "=" + folderName);
 		if (folderName.equals(DAMFolder.ROOTNAME))
@@ -115,7 +123,7 @@ public class FolderDAO extends HibernateDaoSupport {
 		try {
 			String queryString = "from DAMFolder as model where " + "model." + CRITERIA_PARAMS[0] + " = " + values[0]
 					+ " AND model." + CRITERIA_PARAMS[1] + "= '" + values[1] + "' AND model." + FolderDAO.NAME + "='"
-					+ folderName + "'";
+					+ quoteQuote(folderName) + "'";
 			// If a unique one is needed call the other getFolder function with id parameter.
 			// I know there is a find() method with value[] as parameter but this way was faster
 			return (DAMFolder) getHibernateTemplate().find(queryString).get(0);

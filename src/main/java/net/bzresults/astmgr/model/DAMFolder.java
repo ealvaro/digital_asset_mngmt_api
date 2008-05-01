@@ -22,6 +22,7 @@ public class DAMFolder implements java.io.Serializable {
 	public static final Byte NOT_SYSTEM = Byte.valueOf("0");
 	public static final Byte SYSTEM = Byte.valueOf("1");
 	public static final String ROOTNAME = "ROOT";
+	public static final String BZLOGO = "BZ Logo";
 	public static final String ALL_VALVES = "*";
 	// Fields
 	private Long id;

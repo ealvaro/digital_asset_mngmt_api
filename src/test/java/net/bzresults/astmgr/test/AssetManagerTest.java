@@ -44,11 +44,15 @@ public class AssetManagerTest extends TestCase {
 
 	private static final Long BCCUSERID = 1L;
 
+	private static final String SERVERID = "paolaserver";
+
 	private static final Long ANOTHERBCCUSERID = 12L;
 
 	private static final String CLIENTDIR = "\\";
 
 	private static final String TESTFILENAME = "testDuke.jpg";
+
+	private static final String FRENCHWORD = "l'arrière-boutique";
 
 	private ClassPathXmlApplicationContext factory;
 
@@ -100,15 +104,15 @@ public class AssetManagerTest extends TestCase {
 	 */
 	protected void setUp() throws Exception {
 		super.setUp();
-		manager = new AssetManager(VALVEID, CLIENTID, BCCUSERID, folderMngr, assetMngr, tagMngr);
+		manager = new AssetManager(VALVEID, CLIENTID, BCCUSERID, SERVERID, folderMngr, assetMngr, tagMngr);
 		localFolderToTest = new DAMFolder(manager.getCurrentFolder(), "JUnit Test Folder", "test_folder",
 				"*.jpg,*.gif", VALVEID, CLIENTID, DAMFolder.VISIBLE, DAMFolder.WRITABLE, DAMFolder.NOT_SYSTEM, "/",
 				new HashSet<DAMAsset>(0), new HashSet<DAMFolder>(0));
-		localFolderToTest2 = "test_folder2";
+		localFolderToTest2 = FRENCHWORD;
 		localAssetToTest = new DAMAsset(manager.getCurrentFolder(), TESTFILENAME, VALVEID, new Date(System
 				.currentTimeMillis()), CLIENTID, DAMAsset.WRITABLE, BCCUSERID);
 		oldFileName = localAssetToTest.getFileName();
-		newFileName = FilenameUtils.getBaseName(oldFileName) + "2." + FilenameUtils.getExtension(oldFileName);
+		newFileName = FRENCHWORD + "." + FilenameUtils.getExtension(oldFileName);
 	}
 
 	/**
@@ -117,6 +121,18 @@ public class AssetManagerTest extends TestCase {
 	protected void tearDown() throws Exception {
 		super.tearDown();
 		manager = null;
+	}
+
+	public void testCreatedSystemFolders() {
+		List<DAMFolder> folders = folderMngr.findBySystem(DAMFolder.SYSTEM);
+		int systemFoldersCounter = 0;
+		for (DAMFolder folder : folders)
+			if (folder.getClientId().equals(CLIENTID) && folder.getValveId().equals(VALVEID)) {
+				systemFoldersCounter++;
+				File f = new File(folder.getPath());
+				assertTrue(f.exists() && f.isDirectory());
+			}
+		assertEquals(systemFoldersCounter, 6);
 	}
 
 	/**
@@ -246,7 +262,7 @@ public class AssetManagerTest extends TestCase {
 		manager.addAssetTag(TESTFILENAME, "year", "2007");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
 				6);
-		manager.addAssetTag(TESTFILENAME, "awesome");
+		manager.addAssetTag(TESTFILENAME, "l'arrière-boutique");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
 				7);
 		manager.addAssetTag(TESTFILENAME, "cool");
@@ -334,6 +350,7 @@ public class AssetManagerTest extends TestCase {
 			assertEquals(assetList.size(), 1);
 			DAMAsset movedAsset = (DAMAsset) assetList.get(0);
 			assertEquals(movedAsset.getFolder().getName(), localFolderToTest.getName());
+			assertEquals(movedAsset.getValveId(),manager.getCurrentValveId());
 
 			log.debug(originalPath);
 			File f = new File(originalPath);
@@ -366,7 +383,8 @@ public class AssetManagerTest extends TestCase {
 				List<DAMAsset> assetList = assetMngr.findByFileName(newFileName);
 				assertEquals(assetList.size(), 1);
 				DAMAsset movedAsset = (DAMAsset) assetList.get(0);
-				assertEquals(movedAsset.getFolder().getName(), localFolderToTest.getName());
+				assertEquals(movedAsset.getFolder().getName(), DAMFolder.ROOTNAME);
+				assertEquals(movedAsset.getValveId(),DAMAsset.ALL_VALVES);
 
 				log.debug(originalPath);
 				File f = new File(originalPath);
@@ -451,8 +469,8 @@ public class AssetManagerTest extends TestCase {
 		log.debug("going to be deleting this: " + originalPath + " from this current folder: "
 				+ localFolderToTest.getName());
 		try {
-			DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
-			manager.changeToFolder(toFolder.getId());
+//			DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+			manager.changeToFolder(assetBeforeDelete.getFolder().getId());
 		} catch (AssetManagerException ame) {
 			log.error(ame.getMessage());
 		}

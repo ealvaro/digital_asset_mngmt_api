@@ -39,14 +39,32 @@ import org.springframework.web.multipart.MultipartFile;
  *         Asset Manager has a root folder with assets and subfolders under it in a hierarchical structure 'ala' Windows
  *         Explorer. It also has the knowledge of a current folder which is the folder currently being processed. All
  *         Assets and Folders created will have an equivalent file and folder hierarchical structure in the O/S. Assets
- *         can be tagged with free form values to facilitate their search and classification.
+ *         can be tagged with free form values or with categorized name/value tags to facilitate their search and
+ *         classification. The TYPE tag is automatically created for every new asset equivalent to the file's extension.
+ *         There are special folders under the root folder called valve-folders and users can only see the contents of
+ *         one valve-folder at a time. All assets under the root folder are shared among valve folders. There are also
+ *         system-folders which are writable folders that cannot be renamed nor moved and they are placed as reference
+ *         for assets with common characteristics. The following system folders will be created by default under the
+ *         valve-folder:
+ *         <ul>
+ *         <li>"My Images with *.jpg,*.png,*.gif"</li>
+ *         <li>"My Videos with *.mwv, *.avi, *.mpg"</li>
+ *         <li>"My Digital Ads with *.dad, *.swf)"</li>
+ *         <li>"My Prints with *.pdf, *.doc"</li>
+ *         </ul>
+ *         <p>
+ *         There are also virtual-folders which are read-only folders that do not exist in the O/S. The result of an
+ *         Asset Search is an example of a virtual folder.
  *         <p>
  *         Asset Manager implements the following functions on Folders:
  *         <p>
  *         <ul>
  *         <li>create user Folder</li>
  *         <li>change to a Folder</li>
- *         <li>change to parent Folder (stay in root Folder if already there)</li>
+ *         <li>move a Folder to an existing Folder</li>
+ *         <li>delete a Folder</li>
+ *         <li>protect/unprotect a Folder based on ownership</li>
+ *         <li>change to parent Folder (will stay in root Folder if already there)</li>
  *         <li>create all Folders in a given path (if needed)</li>
  *         </ul>
  *         <p>
@@ -54,7 +72,13 @@ import org.springframework.web.multipart.MultipartFile;
  *         <p>
  *         <ul>
  *         <li>create an Asset, (uploading a file)</li>
- *         <li>add an Asset Tag</li>
+ *         <li>move an Asset to an existing Folder</li>
+ *         <li>delete an Asset</li>
+ *         <li>rename an Asset</li>
+ *         <li>protect/unprotect an Asset based on ownership</li>
+ *         <li>add an Asset Tag by name/value or just value</li>
+ *         <li>delete an Asset Tag by name or by value</li>
+ *         <li>find an Asset by name or by tag</li>
  */
 public class AssetManager implements IAssetManager {
 
@@ -75,22 +99,24 @@ public class AssetManager implements IAssetManager {
 	private String currentValveId;
 	private Long currentClientId;
 	private Long ownerId;
+	private String serverId;
 
-	public AssetManager(String currentValveId, Long currentClientId, Long ownerId) {
-		this(ROOTDIR, currentValveId, currentClientId, ownerId, null, null, null);
+	public AssetManager(String currentValveId, Long currentClientId, Long ownerId, String strServerId) {
+		this(ROOTDIR, currentValveId, currentClientId, ownerId, strServerId, null, null, null);
 	}
 
-	public AssetManager(String currentValveId, Long currentClientId, Long ownerId, FolderDAO folderMngr,
-			AssetDAO assetMngr, TagDAO tagMngr) {
-		this(ROOTDIR, currentValveId, currentClientId, ownerId, folderMngr, assetMngr, tagMngr);
+	public AssetManager(String currentValveId, Long currentClientId, Long ownerId, String strServerId,
+			FolderDAO folderMngr, AssetDAO assetMngr, TagDAO tagMngr) {
+		this(ROOTDIR, currentValveId, currentClientId, ownerId, strServerId, folderMngr, assetMngr, tagMngr);
 	}
 
-	public AssetManager(String rootDir, String currentValveId, Long currentClientId, Long ownerId,
+	public AssetManager(String rootDir, String currentValveId, Long currentClientId, Long ownerId, String strServerId,
 			FolderDAO folderMngr, AssetDAO assetMngr, TagDAO tagMngr) {
 		this.rootDir = rootDir;
 		this.currentValveId = currentValveId;
 		this.currentClientId = currentClientId;
 		this.ownerId = ownerId;
+		this.serverId = strServerId;
 		if (folderMngr == null || assetMngr == null || tagMngr == null) {
 			this.factory = new ClassPathXmlApplicationContext(CONFIG_FILE_LOCATION);
 			this.folderMngr = FolderDAO.getFromApplicationContext(factory);
@@ -126,9 +152,8 @@ public class AssetManager implements IAssetManager {
 				+ "/My Digital Ads");
 		createSystemFolder("My Prints", "Print Assets (*.pdf, *.doc)", "*.pdf,*.doc", this.currentFolder.getPath()
 				+ "/My Prints");
-		createSystemFolder("BZ Assets", "BZ Images (*.jpg,*.png,*.gif)", "*.jpg,*.png,*.gif", this.currentFolder
-				.getPath()
-				+ "/BZ Assets");
+		createSystemFolder(DAMFolder.BZLOGO, "BZ created logo (*.swf)", "*.swf", BZROOTDIR + "/" + this.serverId
+				+ "/media");
 
 		log.debug(this.currentClientId + ": Created System folders");
 	}
@@ -141,7 +166,7 @@ public class AssetManager implements IAssetManager {
 		this.currentFolder.setParentFolder(this.currentFolder);
 		folderMngr.save(this.currentFolder);
 		try {
-			writeFolder(this.currentFolder);
+			writeFolder(this.currentFolder, false);
 		} catch (AssetManagerException ame) {
 			log.error(this.currentClientId + ": Error creating ROOT Folder at '" + this.currentFolder.getPath() + "'");
 		} catch (IOException ioe) {
@@ -157,7 +182,7 @@ public class AssetManager implements IAssetManager {
 				path, null, null);
 		folderMngr.save(valveFolder);
 		try {
-			writeFolder(valveFolder);
+			writeFolder(valveFolder, false);
 		} catch (AssetManagerException ame) {
 			log.error(this.currentClientId + ": 'valve' Folder at '" + path + "' already exists.");
 		} catch (IOException ioe) {
@@ -695,9 +720,14 @@ public class AssetManager implements IAssetManager {
 		if (findFolderInCurrentFolder(currentFolder, folderName) == null) {
 			if (!folderName.equalsIgnoreCase(DAMFolder.ROOTNAME)) {
 				DAMFolder localFolder = new DAMFolder(currentFolder, description, folderName, format, currentValveId,
-						currentClientId, DAMFolder.VISIBLE, readOnly, system, path, new HashSet<DAMAsset>(0),
-						new HashSet<DAMFolder>(0));
-				createFolder(localFolder);
+						currentClientId, DAMFolder.VISIBLE, readOnly, system, path, new HashSet<DAMAsset>(16),
+						new HashSet<DAMFolder>(16));
+				if (folderName.equalsIgnoreCase(DAMFolder.BZLOGO)) {
+					createFolder(localFolder, true);
+					registerCreatedAsset(path, "logo.swf", DAMAsset.READONLY);
+				} else {
+					createFolder(localFolder, false);
+				}
 			} else {
 				log.error(this.currentClientId + ": DAMFolder '" + folderName
 						+ "' already exists and it's the root directory");
@@ -714,11 +744,11 @@ public class AssetManager implements IAssetManager {
 		createFolder(folderName, folderName, "", readOnly, system, path);
 	}
 
-	private void createFolder(DAMFolder dAMFolder) throws AssetManagerException, IOException {
+	private void createFolder(DAMFolder dAMFolder, Boolean IgnoreIfExists) throws AssetManagerException, IOException {
 		if (dAMFolder.getName() != null && !"".equals(dAMFolder.getName())) {
 			// try creating the folder in the O/S first. If something goes wrong,
 			// will throw AssetManagerException and won't create it in DAM db.
-			writeFolder(dAMFolder);
+			writeFolder(dAMFolder, IgnoreIfExists);
 			currentFolder.addSubFolder(dAMFolder);
 			folderMngr.save(dAMFolder);
 			log.debug(this.currentClientId + ": Created DAMFolder '" + dAMFolder.getName() + "' under folder '"
@@ -729,13 +759,14 @@ public class AssetManager implements IAssetManager {
 		}
 	}
 
-	private void writeFolder(DAMFolder dAMFolder) throws AssetManagerException, IOException {
+	private void writeFolder(DAMFolder dAMFolder, Boolean IgnoreIfExists) throws AssetManagerException, IOException {
 		File dir = new File(dAMFolder.getPath());
 		if (!dir.exists())
 			// create directory in O/S
 			dir.mkdirs();
 		else
-			// folder was created already here, by somebody else.
+		// folder was created already here, by somebody else. if IgnoreIfExists then load assets from there into db.
+		if (!IgnoreIfExists)
 			throw new AssetManagerException("Folder '" + dAMFolder.getPath() + "' already exists.");
 
 	}
@@ -888,18 +919,16 @@ public class AssetManager implements IAssetManager {
 	 */
 	public void virtualFolder(String queryName) {
 		if (queryName.equals("recent")) {
-			currentFolder = createVirtualFolder("Recent Items", "Assets uploaded during the last hour");
-		} else if (queryName.equals("jpgs")) {
-			currentFolder = createVirtualFolder("All JPGs", "All JPG Assets uploaded");
+			currentFolder = createRecentItemsVirtualFolder("Recent Items", "Assets uploaded during the last hour");
 		}
 	}
 
-	private DAMFolder createVirtualFolder(String folderName, String description) {
+	private DAMFolder createRecentItemsVirtualFolder(String folderName, String description) {
 		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId, currentClientId,
-				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0),
-				new HashSet<DAMFolder>(0));
+				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(16),
+				new HashSet<DAMFolder>(16));
 		List<DAMAsset> assetList = assetMngr.getRecentItems(getCriteria_values(), new Date(System.currentTimeMillis()));
-		Set<DAMAsset> as = new HashSet<DAMAsset>(0);
+		Set<DAMAsset> as = new HashSet<DAMAsset>(16);
 		for (DAMAsset a : assetList)
 			as.add(a);
 		virtualFolder.setAssetFiles(as);
@@ -1048,10 +1077,10 @@ public class AssetManager implements IAssetManager {
 
 	private DAMFolder createVirtualFolderFromAssetName(String folderName, String description, String fileName) {
 		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId, currentClientId,
-				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0),
-				new HashSet<DAMFolder>(0));
+				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(16),
+				new HashSet<DAMFolder>(16));
 		List<DAMAsset> assetList = assetMngr.findByFileName(fileName);
-		Set<DAMAsset> as = new HashSet<DAMAsset>(0);
+		Set<DAMAsset> as = new HashSet<DAMAsset>(16);
 		for (DAMAsset a : assetList)
 			as.add(a);
 		virtualFolder.setAssetFiles(as);
@@ -1084,32 +1113,14 @@ public class AssetManager implements IAssetManager {
 
 	private DAMFolder createVirtualFolderFromTags(String folderName, String description, String tagName, String tagValue) {
 		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId, currentClientId,
-				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0),
-				new HashSet<DAMFolder>(0));
+				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(16),
+				new HashSet<DAMFolder>(16));
 		List<DAMTag> tagList = tagMngr.getTagsByAttribValue(tagName, tagValue);
-		Set<DAMAsset> as = new HashSet<DAMAsset>(0);
+		Set<DAMAsset> as = new HashSet<DAMAsset>(16);
 		for (DAMTag t : tagList) {
 			DAMAsset asset = t.getAssetId();
 			if (asset.getClientId().equals(currentClientId)
 					&& (asset.getValveId().equals(currentValveId) || asset.getValveId().equals(DAMFolder.ALL_VALVES)))
-				as.add(asset);
-		}
-		virtualFolder.setAssetFiles(as);
-		log.debug(this.currentClientId + ": Searched for Assets '" + tagName + "'='" + tagValue + "' and found "
-				+ as.size() + " Assets");
-		return virtualFolder;
-	}
-
-	private DAMFolder createVirtualFolderFromOSFolder(String folderName, String description, String tagName,
-			String tagValue) {
-		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId, currentClientId,
-				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, "/", new HashSet<DAMAsset>(0),
-				new HashSet<DAMFolder>(0));
-		List<DAMTag> tagList = tagMngr.getTagsByAttribValue(tagName, tagValue);
-		Set<DAMAsset> as = new HashSet<DAMAsset>(0);
-		for (DAMTag t : tagList) {
-			DAMAsset asset = t.getAssetId();
-			if (asset.getClientId().equals(currentClientId) && asset.getValveId().equals(currentValveId))
 				as.add(asset);
 		}
 		virtualFolder.setAssetFiles(as);

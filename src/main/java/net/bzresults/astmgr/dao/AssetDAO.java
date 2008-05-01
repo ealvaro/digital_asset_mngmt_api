@@ -107,11 +107,20 @@ public class AssetDAO extends HibernateDaoSupport {
 		}
 	}
 
+	/**
+	 * @param fileName
+	 * @return a String that has replaced all single quotes within the fileName, with 2 single quotes.
+	 */
+	private String quoteQuote(String fileName) {
+		return fileName.replaceAll("'", "''");
+	}
+
 	public List findByFileName(String fileName) {
 		// return findByProperty(FILE_NAME, fileName);
 		log.debug("finding DAMAsset instance with property name: like " + fileName);
 		try {
-			String queryString = "from DAMAsset as model where model." + FILE_NAME + " like '%" + fileName + "%'";
+			String queryString = "from DAMAsset as model where model." + FILE_NAME + " like '%" + quoteQuote(fileName)
+					+ "%'";
 			return getHibernateTemplate().find(queryString);
 		} catch (RuntimeException re) {
 			log.error("find by property name failed", re);
