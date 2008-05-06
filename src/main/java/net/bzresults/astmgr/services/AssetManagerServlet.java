@@ -74,8 +74,8 @@ public class AssetManagerServlet extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		HttpSession session = request.getSession();
 		AssetManager am = (AssetManager) session.getAttribute(AM_PARAM);
-		//Client client = (Client) session.getAttribute(Constants.CLIENT_KEY);
-		//String strServerid = client.getServerid();
+		// Client client = (Client) session.getAttribute(Constants.CLIENT_KEY);
+		// String strServerid = client.getWebConfig().getServerId();
 		// Valve currentValve = (Valve) session.getAttribute(Constants.VALVE_KEY);
 		// ClientUser user = (ClientUser) session.getAttribute(Constants.BCC_USER_KEY);
 		// ClientUser user = WebHelper.getBccUser(request.getSession());
@@ -115,7 +115,7 @@ public class AssetManagerServlet extends HttpServlet {
 			am = createAMSession(session, out, strClient, strValve, strUser, strServerid);
 		}
 		if (action == null || action.equals("")) {
-			XMLAssetManager.sendXMLStructure(out, am.getCurrentFolder(), am.getCurrentValveId());
+			XMLAssetManager.sendXMLStructure(out, am.getRoot(), am.getCurrentValveId());
 		} else {
 			try {
 				processAction(request, am, action);
@@ -134,8 +134,8 @@ public class AssetManagerServlet extends HttpServlet {
 						+ " had an error.");
 			} catch (Exception e) {
 				e.printStackTrace();
-				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error: " + e.getMessage() + " \ncurrent client id: "
-						+ am.getCurrentClientId());
+				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error in parameters passed for action: " + action + ":"
+						+ e.getMessage() + " \ncurrent client id: " + am.getCurrentClientId());
 			}
 		}
 		out.flush();
@@ -172,11 +172,11 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("createUserFolder")) {
 			damAction = new CreateUserFolderAction(request, am);
 		} else
-		// ?action=moveFolder&name=testingfolder&toname=My%20Images
+		// ?action=moveFolder&id=testingfolder&toid=3  (where My%20Images folder id = 3)s
 		if (action.equals("moveFolder")) {
 			damAction = new MoveFolderAction(request, am);
 		} else
-		// ?action=changeToFolder&name=My%20Images
+		// ?action=changeToFolder&id=3
 		if (action.equals("changeToFolder")) {
 			damAction = new ChangeToFolderAction(request, am);
 		} else
@@ -188,7 +188,7 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("renameAsset")) {
 			damAction = new RenameAssetAction(request, am);
 		} else
-		// ?action=moveAsset&name=My%20Picture.jpg&toname=testingfolder
+		// ?action=moveAsset&name=My%20Picture.jpg&toid=3
 		if (action.equals("moveAsset")) {
 			damAction = new MoveAssetAction(request, am);
 		} else
@@ -200,15 +200,15 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("unprotectAsset")) {
 			damAction = new UnProtectAssetAction(request, am);
 		} else
-		// ?action=protectFolder&name=test_folder
+		// ?action=protectFolder&id=3
 		if (action.equals("protectFolder")) {
 			damAction = new ProtectFolderAction(request, am);
 		} else
-		// ?action=unprotectFolder&name=test_folder
+		// ?action=unprotectFolder&id=3
 		if (action.equals("unprotectFolder")) {
 			damAction = new UnProtectFolderAction(request, am);
 		} else
-		// ?action=deleteFolder&name=testingfolder
+		// ?action=deleteFolder&id=3
 		if (action.equals("deleteFolder")) {
 			damAction = new DeleteFolderAction(request, am);
 		} else
@@ -236,7 +236,7 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("deleteAssetTagValue")) {
 			damAction = new DeleteAssetTagValueAction(request, am);
 		} else
-		// ?action=findAssetsByName&name=My%20Picture.jpg
+		// ?action=findAssetsByName&name=My%20Pic
 		if (action.equals("findAssetsByName")) {
 			damAction = new FindAssetsByNameAction(request, am);
 		} else

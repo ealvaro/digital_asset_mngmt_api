@@ -43,18 +43,19 @@ import org.springframework.web.multipart.MultipartFile;
  *         classification. The TYPE tag is automatically created for every new asset equivalent to the file's extension.
  *         There are special folders under the root folder called valve-folders and users can only see the contents of
  *         one valve-folder at a time. All assets under the root folder are shared among valve folders. There are also
- *         system-folders which are writable folders that cannot be renamed nor moved and they are placed as reference
- *         for assets with common characteristics. The following system folders will be created by default under the
- *         valve-folder:
+ *         system-folders which are writable folders that cannot be renamed nor moved nor deleted and they are placed as
+ *         reference for assets with common characteristics. The following system folders will be created by default
+ *         under the valve-folder:
  *         <ul>
  *         <li>"My Images with *.jpg,*.png,*.gif"</li>
  *         <li>"My Videos with *.mwv, *.avi, *.mpg"</li>
- *         <li>"My Digital Ads with *.dad, *.swf)"</li>
+ *         <li>"My Digital Ads with *.dad, *.swf"</li>
  *         <li>"My Prints with *.pdf, *.doc"</li>
+ *         <li>"BZ Logo with *.swf"</li>
  *         </ul>
  *         <p>
  *         There are also virtual-folders which are read-only folders that do not exist in the O/S. The result of an
- *         Asset Search is an example of a virtual folder.
+ *         Asset Search (like "Recently Created Assets") is an example of a virtual folder.
  *         <p>
  *         Asset Manager implements the following functions on Folders:
  *         <p>

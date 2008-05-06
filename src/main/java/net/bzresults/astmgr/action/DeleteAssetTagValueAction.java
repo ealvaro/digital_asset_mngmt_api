@@ -30,10 +30,11 @@ public class DeleteAssetTagValueAction implements IDAMAction {
 	}
 
 	public void execute() throws FileUploadException, IOException, Exception {
-			String assetName = request.getParameter("name");
-			String tagValue = request.getParameter("value");
+		String assetName = request.getParameter("name");
+		String tagValue = request.getParameter("value");
+		if (assetName != null && tagValue != null)
 			am.deleteAssetTagValue(assetName, tagValue);
-
+		else
+			throw new Exception("Invalid/missing 'name' and/or 'value' parameters");
 	}
-
 }

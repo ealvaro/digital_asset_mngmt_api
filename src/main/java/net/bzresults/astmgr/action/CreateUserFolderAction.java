@@ -15,10 +15,11 @@ public class CreateUserFolderAction implements IDAMAction {
 		this.am = am;
 	}
 
-	public void execute() throws AssetManagerException  {
+	public void execute() throws AssetManagerException, Exception {
 		String folderName = request.getParameter("name");
-		am.createUserFolder((folderName == null ? "test_folder" : folderName));
-
+		if (folderName != null)
+			am.createUserFolder(folderName);
+		else
+			throw new Exception("Invalid/missing 'name' parameter");
 	}
-
 }

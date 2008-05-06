@@ -14,11 +14,13 @@ public class RenameAssetAction implements IDAMAction {
 		this.am = am;
 	}
 
-	public void execute() {
+	public void execute() throws Exception {
 		String assetName = request.getParameter("name");
 		String toName = request.getParameter("toname");
-		am.renameAsset(assetName, toName);
-
+		if (assetName != null && toName != null)
+			am.renameAsset(assetName, toName);
+		else
+			throw new Exception("Invalid/missing 'name' and/or 'toname' parameters");
 	}
 
 }
