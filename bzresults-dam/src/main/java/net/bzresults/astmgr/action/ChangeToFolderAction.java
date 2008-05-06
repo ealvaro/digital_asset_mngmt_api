@@ -15,11 +15,13 @@ public class ChangeToFolderAction implements IDAMAction {
 		this.am = am;
 	}
 
-	public void execute() throws AssetManagerException {
-		String strFolderID = request.getParameter("id");
-		if (!(strFolderID == null)) {
-			Long folderID = Long.parseLong(strFolderID);
-			am.changeToFolder(folderID);
-		}
+	public void execute() throws AssetManagerException, Exception {
+		Long folderId;
+		String strFolderId = request.getParameter("id");
+		if (strFolderId != null) {
+			folderId = Long.valueOf(strFolderId);
+			am.changeToFolder(folderId);
+		} else
+			throw new Exception("Invalid/missing 'id' parameter");
 	}
 }

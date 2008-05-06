@@ -19,8 +19,13 @@ public class ProtectFolderAction implements IDAMAction {
 	}
 
 	public void execute() throws FileUploadException, IOException, Exception {
-		Long folderId = Long.valueOf(request.getParameter("id"));
-		am.protectFolder(folderId);
+		Long folderId;
+		String strFolderId = request.getParameter("id");
+		if (strFolderId != null) {
+			folderId = Long.valueOf(strFolderId);
+			am.protectFolder(folderId);
+		} else
+			throw new Exception("Invalid/missing 'id' parameter");
 	}
 
 }

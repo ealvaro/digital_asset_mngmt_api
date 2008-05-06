@@ -33,11 +33,13 @@ public class AddAssetTagAction implements IDAMAction {
 		String assetName = request.getParameter("name");
 		String tagName = request.getParameter("tag");
 		String tagValue = request.getParameter("value");
-		if (tagName == null || tagName.equals(""))
-			am.addAssetTag(assetName, tagValue);
+		if (assetName != null && tagValue != null)
+			if (tagName == null || tagName.equals(""))
+				am.addAssetTag(assetName, tagValue);
+			else
+				am.addAssetTag(assetName, tagName, tagValue);
 		else
-			am.addAssetTag(assetName, tagName, tagValue);
-
+			throw new Exception("Invalid/missing 'name' and/or 'value' parameters");
 	}
 
 }

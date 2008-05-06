@@ -22,7 +22,8 @@ public class UnProtectAssetAction implements IDAMAction {
 		String assetName = request.getParameter("name");
 		if (assetName != null)
 			am.unProtectAsset(assetName);
-
+		else
+			throw new Exception("Invalid/missing 'name' parameter");
 	}
 
 }

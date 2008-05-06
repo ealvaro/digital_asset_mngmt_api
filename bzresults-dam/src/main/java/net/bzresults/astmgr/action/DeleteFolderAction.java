@@ -15,11 +15,12 @@ public class DeleteFolderAction implements IDAMAction {
 		this.am = am;
 	}
 
-	public void execute() throws AssetManagerException {
+	public void execute() throws AssetManagerException, Exception {
 		String strFolderID = request.getParameter("id");
-		if (!(strFolderID == null)) {
+		if (strFolderID != null) {
 			Long folderID = Long.parseLong(strFolderID);
 			am.deleteFolder(folderID);
-		}
+		} else
+			throw new Exception("Invalid/missing 'id' parameter");
 	}
 }

@@ -18,11 +18,11 @@ public class DeleteAssetAction implements IDAMAction {
 		this.am = am;
 	}
 
-	public void execute() throws FileUploadException,
-	IOException, Exception  {
+	public void execute() throws FileUploadException, IOException, Exception {
 		String assetName = request.getParameter("name");
-		am.deleteAsset(assetName);
-
+		if (assetName != null)
+			am.deleteAsset(assetName);
+		else
+			throw new Exception("Invalid/missing 'name' parameter");
 	}
-
 }
