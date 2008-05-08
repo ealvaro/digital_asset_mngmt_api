@@ -388,6 +388,7 @@ public class AssetManager implements IAssetManager {
 	 */
 	public void renameAsset(String oldFileName, String newFileName) {
 		if (currentFolder.getReadOnly() != DAMFolder.READONLY) {
+			// Asset must exist under the current folder
 			DAMAsset dAMAsset = findAssetInCurrentFolder(currentFolder, oldFileName);
 			if (dAMAsset != null)
 				if (findAssetInCurrentFolder(currentFolder, newFileName) == null)
@@ -416,6 +417,38 @@ public class AssetManager implements IAssetManager {
 		} else
 			log.debug(this.currentClientId + ": DAMAsset named '" + oldFileName
 					+ "' cannot be renamed inside a Read-Only folder named '" + currentFolder.getName() + "'");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.bzresults.astmgr.IAssetManager#renameUserFolder(java.lang.Long , java.lang.String)
+	 */
+	public void renameUserFolder(java.lang.Long folderId, String newFolderName) {
+		if (currentFolder.getReadOnly() != DAMFolder.READONLY) {
+			// current folder doesn't have already a newFolderName
+			if (findFolderInCurrentFolder(currentFolder, newFolderName) == null) {
+				DAMFolder dAMFolder = findFolderInCurrentFolder(currentFolder, folderId);
+				// Folder must exist under the current folder
+				if (dAMFolder != null) {
+					String oldName = dAMFolder.getPath();
+					// Obtain the reference of the existing folder
+					File oldFolder = new File(oldName);
+					dAMFolder.setName(newFolderName);
+					folderMngr.attachDirty(dAMFolder);
+					// Now invoke the renameTo() method on the reference
+					oldFolder.renameTo(new File(dAMFolder.getPath()));
+					log.debug(this.currentClientId + ": Renamed folder '" + oldName + "' to '" + dAMFolder.getPath()
+							+ "'");
+				} else
+					log.debug(this.currentClientId + ": current folder named '" + currentFolder.getName()
+							+ "' doesn't have a subfolder with id = '" + folderId + "'");
+			} else
+				log.error(this.currentClientId + ": folder '" + newFolderName + "' already exists under folder '"
+						+ currentFolder.getName() + "'");
+		} else
+			log.debug(this.currentClientId + ": current folder named '" + currentFolder.getName()
+					+ "' is a Read-Only folder.'");
 	}
 
 	private DAMAsset findAssetInCurrentFolder(DAMFolder folder, String fileName) {

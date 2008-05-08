@@ -271,6 +271,40 @@ function showSessionInfo()
 					</blockquote>
 				</li>
 				<li>
+					Call to
+					<b>renameFolder</b> requires id and toname param.
+					<br />
+					<blockquote>
+						- Folder Id has to exist under current folder
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Folder Id:
+									</td>
+									<td>
+										<input type="text" name="renameFolderId" size="10" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										Folder new name:
+									</td>
+									<td>
+										<input type="text" name="renameToFolder" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<input type="button" value="Call moveFolder"
+											onclick="doRenameFolderCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
+				</li>
+				<li>
 					<a href="javascript:openWin('/dam/uploadFiles.html')">createAsset</a>
 					(Opens new window since can't upload via ajax)
 					<br />

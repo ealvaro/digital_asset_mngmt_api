@@ -34,6 +34,8 @@ public interface IAssetManager {
 
 	// Folder CRUDs
 	public abstract void createUserFolder(String folderName) throws AssetManagerException;
+	
+	public abstract void renameUserFolder(java.lang.Long folderId, String newFolderName); 
 
 	public abstract void protectFolder(java.lang.Long folderId);
 

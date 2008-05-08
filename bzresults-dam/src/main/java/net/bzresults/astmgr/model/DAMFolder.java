@@ -10,7 +10,7 @@ import net.bzresults.astmgr.model.DAMFolder;
 
 /**
  * @author escobara
- * @hibernate.class  table="DAM_FOLDERS" lazy = "false"
+ * @hibernate.class table="DAM_FOLDERS" lazy = "false"
  */
 public class DAMFolder implements java.io.Serializable {
 
@@ -50,12 +50,13 @@ public class DAMFolder implements java.io.Serializable {
 
 	/** minimal constructor */
 	public DAMFolder(String name, String valveId, Long clientId, String path) {
-		this(null, name, name,"", valveId, clientId, INVISIBLE, READONLY, SYSTEM, path, null, null);
+		this(null, name, name, "", valveId, clientId, INVISIBLE, READONLY, SYSTEM, path, null, null);
 	}
 
 	/** full constructor */
-	public DAMFolder(DAMFolder parentfolder, String description, String name, String format, String valveId, Long clientId,
-			Byte hidden, Byte readOnly, Byte system, String path, Set<DAMAsset> assetFiles, Set<DAMFolder> subFolders) {
+	public DAMFolder(DAMFolder parentfolder, String description, String name, String format, String valveId,
+			Long clientId, Byte hidden, Byte readOnly, Byte system, String path, Set<DAMAsset> assetFiles,
+			Set<DAMFolder> subFolders) {
 		this.description = description;
 		this.name = name;
 		this.valveId = valveId;
@@ -65,11 +66,12 @@ public class DAMFolder implements java.io.Serializable {
 		this.clientId = clientId;
 		this.format = format;
 		this.system = system;
-		this.createDate = new Date(System.currentTimeMillis());;
+		this.createDate = new Date(System.currentTimeMillis());
+
 		this.path = path;
-		if(assetFiles != null) // don't want to set it null when our intial state is an empty set!
+		if (assetFiles != null) // don't want to set it null when our intial state is an empty set!
 			this.assetFiles = assetFiles;
-		if(subFolders != null)
+		if (subFolders != null)
 			this.subFolders = subFolders;
 	}
 
@@ -89,10 +91,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.id = id;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "DESCRIPTION"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "DESCRIPTION"
+	 */
 	public String getDescription() {
 		return this.description;
 	}
@@ -101,22 +103,24 @@ public class DAMFolder implements java.io.Serializable {
 		this.description = description;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "NAME"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "NAME"
+	 */
 	public String getName() {
 		return this.name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
+		if (this.parentFolder != null)
+			this.path = this.parentFolder.getPath() + "/" + name;
 	}
 
 	/**
-     * @hibernate.property
-     * @hibernate.column name = "VALVE_ID"
-     */
+	 * @hibernate.property
+	 * @hibernate.column name = "VALVE_ID"
+	 */
 	public String getValveId() {
 		return this.valveId;
 	}
@@ -125,10 +129,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.valveId = valveId;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "HIDDEN"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "HIDDEN"
+	 */
 	public Byte getHidden() {
 		return this.hidden;
 	}
@@ -137,10 +141,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.hidden = hidden;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "READ_ONLY"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "READ_ONLY"
+	 */
 	public Byte getReadOnly() {
 		return this.readOnly;
 	}
@@ -149,10 +153,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.readOnly = readOnly;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "CLIENT_ID"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "CLIENT_ID"
+	 */
 	public Long getClientId() {
 		return this.clientId;
 	}
@@ -161,10 +165,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.clientId = clientId;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "FORMAT"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "FORMAT"
+	 */
 	public String getFormat() {
 		return this.format;
 	}
@@ -173,10 +177,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.format = format;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "SYSTEM"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "SYSTEM"
+	 */
 	public Byte getSystem() {
 		return this.system;
 	}
@@ -185,10 +189,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.system = system;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "CREATE_DATE"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "CREATE_DATE"
+	 */
 	public Date getCreateDate() {
 		return this.createDate;
 	}
@@ -197,10 +201,10 @@ public class DAMFolder implements java.io.Serializable {
 		this.createDate = createDate;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "PATH"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "PATH"
+	 */
 	public String getPath() {
 		return this.path;
 	}
@@ -239,16 +243,17 @@ public class DAMFolder implements java.io.Serializable {
 
 	public void setAssetFiles(Set<DAMAsset> assetFiles) {
 		this.assetFiles.clear();
-		if(assetFiles != null)
+		if (assetFiles != null)
 			this.assetFiles.addAll(assetFiles);
 	}
-	
+
 	public void addAsset(DAMAsset damAsset) {
-		if (this.getName().equals(ROOTNAME)) damAsset.setValveId(ALL_VALVES);
+		if (this.getName().equals(ROOTNAME))
+			damAsset.setValveId(ALL_VALVES);
 		damAsset.setFolder(this);
 		this.assetFiles.add(damAsset);
 	}
-	
+
 	public void removeAsset(DAMAsset damAsset) {
 		damAsset.setFolder(null);
 		this.assetFiles.remove(damAsset);
@@ -276,16 +281,17 @@ public class DAMFolder implements java.io.Serializable {
 		damFolder.setParentFolder(this);
 		this.subFolders.add(damFolder);
 	}
-	
+
 	public void removeSubFolder(DAMFolder damFolder) {
 		damFolder.setParentFolder(null);
 		this.subFolders.remove(damFolder);
 	}
+
 	@Override
 	public String toString() {
 		return "parent -->" + (parentFolder != null ? parentFolder.getName() : "null ") + "<p>attributes -->" + name
-				+ "[" + valveId + ":" + clientId.toString() + ":" + hidden + ":'" + description + ":'" + format + "']<p>"
-				+ "contents -->" + (!subFolders.isEmpty() ? subFolders.size() : "no") + " subfolders<p>"
+				+ "[" + valveId + ":" + clientId.toString() + ":" + hidden + ":'" + description + ":'" + format
+				+ "']<p>" + "contents -->" + (!subFolders.isEmpty() ? subFolders.size() : "no") + " subfolders<p>"
 				+ "         -->" + (!assetFiles.isEmpty() ? assetFiles.size() : "no") + " assets<p>[subfolders:"
 				+ foldersAsString(subFolders) + "]<p>[assets:" + assetsAsString(assetFiles) + "]<p>";
 	}
