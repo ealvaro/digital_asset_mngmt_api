@@ -107,6 +107,15 @@
       return false;
     }
     
+    function doRenameFolderCall(f)
+    {
+      var renameFolderId = f.renameFolderId.value;
+      var renameToFolder = f.renameToFolder.value;
+      var params = "id="+renameFolderId+"&toname="+renameToFolder;
+      doIt('renameUserFolder',params)
+      return false;
+    }
+    
     function doChangeToFolderCall(f)
     {
       var folderId = f.changeToFolderId.value;

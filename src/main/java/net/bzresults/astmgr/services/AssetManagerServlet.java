@@ -32,6 +32,7 @@ import net.bzresults.astmgr.action.ProtectAssetAction;
 import net.bzresults.astmgr.action.ProtectFolderAction;
 import net.bzresults.astmgr.action.QueryFolderAction;
 import net.bzresults.astmgr.action.RenameAssetAction;
+import net.bzresults.astmgr.action.RenameFolderAction;
 import net.bzresults.astmgr.action.UnProtectAssetAction;
 import net.bzresults.astmgr.action.UnProtectFolderAction;
 
@@ -40,7 +41,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class AssetManagerServlet extends HttpServlet {
-	private static final long serialVersionUID = -6204882870976083593L;
+
 	private static final Log log = LogFactory.getLog(AssetManagerServlet.class);
 
 	private static final String AM_PARAM = "am";
@@ -172,7 +173,7 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("createUserFolder")) {
 			damAction = new CreateUserFolderAction(request, am);
 		} else
-		// ?action=moveFolder&id=testingfolder&toid=3  (where My%20Images folder id = 3)s
+		// ?action=moveFolder&id=testingfolder&toid=3 (where My%20Images folder id = 3)s
 		if (action.equals("moveFolder")) {
 			damAction = new MoveFolderAction(request, am);
 		} else
@@ -187,6 +188,10 @@ public class AssetManagerServlet extends HttpServlet {
 		// ?action=renameAsset&name=JUnit%20Test%20Asset.jpg&toname=My%20Picture.jpg
 		if (action.equals("renameAsset")) {
 			damAction = new RenameAssetAction(request, am);
+		} else
+		// ?action=renameUserFolder&id=3&toname=renamed_folder
+		if (action.equals("renameUserFolder")) {
+			damAction = new RenameFolderAction(request, am);
 		} else
 		// ?action=moveAsset&name=My%20Picture.jpg&toid=3
 		if (action.equals("moveAsset")) {
@@ -258,7 +263,7 @@ public class AssetManagerServlet extends HttpServlet {
 				|| action.equals("protectAsset") || action.equals("unprotectAsset") || action.equals("protectFolder")
 				|| action.equals("unprotectFolder") || action.equals("deleteFolder") || action.equals("deleteAsset")
 				|| action.equals("changeToParent") || action.equals("queryFolder") || action.equals("findAssetsByName")
-				|| action.equals("findAssetsByTag") || action.equals("browseBZAssets")) {
+				|| action.equals("findAssetsByTag") || action.equals("browseBZAssets")||action.equals("renameUserFolder")) {
 			XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder(), am.getCurrentValveId());
 		} else if (action.equals("addAssetTag") || action.equals("deleteAssetTagName")
 				|| action.equals("deleteAssetTagValue")) {

@@ -5,11 +5,6 @@
 	<classpathentry kind="src" path="target/generated-resources/xdoclet"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
-	<classpathentry kind="con" path="melibrary.com.genuitec.eclipse.springframework.MYECLIPSE_SPRING20_AOP"/>
-	<classpathentry kind="con" path="melibrary.com.genuitec.eclipse.springframework.MYECLIPSE_SPRING20_CORE"/>
-	<classpathentry kind="con" path="melibrary.com.genuitec.eclipse.springframework.MYECLIPSE_SPRING20_DAO"/>
-	<classpathentry kind="con" path="melibrary.com.genuitec.eclipse.springframework.MYECLIPSE_SPRING20_TESTING"/>
-	<classpathentry kind="con" path="melibrary.com.genuitec.eclipse.springframework.MYECLIPSE_SPRING20_WEB"/>
 	<classpathentry kind="lib" path="src/main/webapp/WEB-INF/lib/mysql-connector-java-3.1.14.jar"/>
 	<classpathentry kind="src" path="resources"/>
 	<classpathentry kind="output" path="src/main/webapp/WEB-INF/classes"/>
