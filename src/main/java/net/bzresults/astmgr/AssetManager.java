@@ -19,6 +19,7 @@ import net.bzresults.astmgr.model.DAMFolder;
 import net.bzresults.astmgr.model.DAMTag;
 import net.bzresults.astmgr.utils.CollectionUtils;
 import net.bzresults.astmgr.utils.ImageUtils;
+import net.bzresults.astmgr.utils.ZipArchive;
 import net.bzresults.imageio.scaling.HighQualityImageScaler;
 import net.bzresults.imageio.scaling.PreserveRatioAssetScaler;
 
@@ -85,6 +86,8 @@ public class AssetManager implements IAssetManager {
 
 	private static final String ROOTDIR = "/var/www/bzwebs/assets";
 	private static final String BZROOTDIR = "/var/www/bzwebs/apec";
+	private static final String ASSETSZIPFOLDER = "/assets";
+
 	public static String CONFIG_FILE_LOCATION = "/applicationContext.xml";
 	private static final Log log = LogFactory.getLog(AssetManager.class);
 	// Default Tags
@@ -101,6 +104,8 @@ public class AssetManager implements IAssetManager {
 	private Long currentClientId;
 	private Long ownerId;
 	private String serverId;
+
+	private String zipWorkingBaseDir = "/temp";
 
 	public AssetManager(String currentValveId, Long currentClientId, Long ownerId, String strServerId) {
 		this(ROOTDIR, currentValveId, currentClientId, ownerId, strServerId, null, null, null);
@@ -292,6 +297,81 @@ public class AssetManager implements IAssetManager {
 		writeThumbnail(toSave, path);
 	}
 
+	public void makeZipFileInsideDAM(String zipFileName, String[] folders, String[] assets) throws Exception {
+		String currentFolderDir = this.currentFolder.getPath();
+		File baseDir = new File(currentFolderDir);
+		ZipArchive zip = new ZipArchive();
+		for (String folderId : folders) {
+			DAMFolder folder2zip = findFolderInCurrentFolder(this.currentFolder, Long.parseLong(folderId));
+			if (folder2zip != null) {
+				File zipFolder = new File(folder2zip.getPath());
+				zip.addFile(zipFolder);
+			}
+		}
+		for (String assetId : assets) {
+			DAMAsset asset2zip = findAssetInCurrentFolder(currentFolder, Long.parseLong(assetId));
+			if (asset2zip != null) {
+				File zipAsset = new File(asset2zip.getPathAndName());
+				zip.addFile(zipAsset);
+				File zipAssetThumb = new File(currentFolderDir, Constants.THUMBNAIL_PREFIX + asset2zip.getFileName());
+				if (zipAssetThumb.exists())
+					zip.addFile(zipAssetThumb);
+			}
+		}
+		File zipFile = new File(baseDir, zipFileName);
+		zip.create(zipFile);
+		registerCreatedAsset(this.currentFolder.getPath(), zipFileName, DAMAsset.WRITABLE);
+	}
+
+	private String makeZipFileSomewhere(String zipFileName, String[] folders, String[] assets) throws Exception {
+		File baseDir = createUniqueTempDirectoryStruct(Double.toString(Math.rint(Math.random() * 256)));
+		File assetsDir = new File(baseDir, ASSETSZIPFOLDER);
+		for (String folderId : folders) {
+			DAMFolder folder2zip = findFolderInCurrentFolder(this.currentFolder, Long.parseLong(folderId));
+			if (folder2zip != null) {
+				// make folder with same name
+				File theFolder = new File(assetsDir, folder2zip.getName());
+				theFolder.mkdir();
+				FileUtils.copyDirectory(new File(folder2zip.getPath()), theFolder);
+			}
+		}
+		ZipArchive zip = new ZipArchive();
+		zip.addFile(assetsDir);
+		File zipFile = new File(baseDir, zipFileName);
+		zip.create(zipFile);
+
+		return zipFile.getAbsolutePath();
+
+	}
+
+	// makes directory under our zipWorkingBaseDir that's unique.
+	// It uses j + a random number and if that already exists, appends a digit so if we get more than one
+	private File createUniqueTempDirectoryStruct(String random) throws Exception {
+
+		File zipWorkingDir = new File(zipWorkingBaseDir); // make new swf_compiling folder under there if doesn't exit
+		if (!zipWorkingDir.exists()) {
+			boolean succeeded = zipWorkingDir.mkdirs();
+			log.error(" attempt to create " + zipWorkingDir.getName() + " " + zipWorkingDir.getAbsolutePath()
+					+ ": did it work? " + succeeded);
+		}
+
+		// now check if already a directory corresponding to sessionid exists ...
+		File baseDir = new File(zipWorkingBaseDir + "/j" + random);
+		int i = 1;
+		while (baseDir.exists()) {
+			log.debug(" baseDir existed so attempting to append " + i);
+			baseDir = new File(zipWorkingBaseDir + "/j" + random + "_" + i++);
+		}
+		boolean succeeded = baseDir.mkdir();
+		if (!succeeded)
+			throw new Exception("Error creating temporary working directory " + baseDir.getAbsolutePath());
+		return baseDir.getAbsoluteFile();
+	}
+
+	public void setZipWorkingBaseDir(String zipWorkingBaseDir) {
+		this.zipWorkingBaseDir = zipWorkingBaseDir;
+	}
+
 	private void addDefaultAssetTags(DAMAsset localAsset) {
 		String fileName = localAsset.getFileName();
 		// Don't add TITLE as an asset tag for now.
@@ -457,6 +537,18 @@ public class AssetManager implements IAssetManager {
 			while (iterator.hasNext()) {
 				DAMAsset dAMAsset = iterator.next();
 				if (dAMAsset.getFileName().equalsIgnoreCase(fileName))
+					return dAMAsset;
+			}
+		}
+		return null;
+	}
+
+	private DAMAsset findAssetInCurrentFolder(DAMFolder folder, java.lang.Long id) {
+		if (folder.getAssetFiles() != null) {
+			Iterator<DAMAsset> iterator = folder.getAssetFiles().iterator();
+			while (iterator.hasNext()) {
+				DAMAsset dAMAsset = iterator.next();
+				if (dAMAsset.getId().equals(id))
 					return dAMAsset;
 			}
 		}

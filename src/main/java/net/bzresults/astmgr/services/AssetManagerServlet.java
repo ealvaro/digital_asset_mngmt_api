@@ -35,6 +35,7 @@ import net.bzresults.astmgr.action.RenameAssetAction;
 import net.bzresults.astmgr.action.RenameFolderAction;
 import net.bzresults.astmgr.action.UnProtectAssetAction;
 import net.bzresults.astmgr.action.UnProtectFolderAction;
+import net.bzresults.astmgr.action.ZipFileAction;
 
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.logging.Log;
@@ -92,7 +93,7 @@ public class AssetManagerServlet extends HttpServlet {
 				strClient = ((Long) session.getAttribute(Constants.CLIENT_KEY)).toString();
 		if (strValve == null || strValve.equals(""))
 			if (session.getAttribute(Constants.VALVE_KEY) == null)
-				strValve = "V54A";
+				strValve = "V1A";
 			else
 				strValve = (String) session.getAttribute(Constants.VALVE_KEY);
 		if (strUser == null || strUser.equals(""))
@@ -249,6 +250,10 @@ public class AssetManagerServlet extends HttpServlet {
 		if (action.equals("findAssetsByTag")) {
 			damAction = new FindAssetsByTagAction(request, am);
 		} else
+		// ?action=zipFile&name=myZip.zip&folderids=1,2,3,4&assetids=44,54,63,78,31
+		if (action.equals("zipFile")) {
+			damAction = new ZipFileAction(request, am);
+		} else
 		// ?action=browseBZAssets
 		if (action.equals("browseBZAssets")) {
 			damAction = new BrowseBZAssetsAction(request, am);
@@ -263,7 +268,8 @@ public class AssetManagerServlet extends HttpServlet {
 				|| action.equals("protectAsset") || action.equals("unprotectAsset") || action.equals("protectFolder")
 				|| action.equals("unprotectFolder") || action.equals("deleteFolder") || action.equals("deleteAsset")
 				|| action.equals("changeToParent") || action.equals("queryFolder") || action.equals("findAssetsByName")
-				|| action.equals("findAssetsByTag") || action.equals("browseBZAssets")||action.equals("renameUserFolder")) {
+				|| action.equals("findAssetsByTag") || action.equals("browseBZAssets") || action.equals("zipFile")
+				|| action.equals("renameUserFolder")) {
 			XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder(), am.getCurrentValveId());
 		} else if (action.equals("addAssetTag") || action.equals("deleteAssetTagName")
 				|| action.equals("deleteAssetTagValue")) {

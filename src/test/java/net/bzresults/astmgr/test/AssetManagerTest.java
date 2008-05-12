@@ -47,6 +47,10 @@ public class AssetManagerTest extends TestCase {
 
 	private static final String TESTFILENAME = "testDuke.jpg";
 
+	private static final String ZIPFILENAME = "my_zipped_folder.zip";
+
+	private static final String ZIPFILENAME2 = "my_zipped_asset.zip";
+
 	private static final String FRENCHWORD = "l'arrière-boutique";
 
 	private ClassPathXmlApplicationContext factory;
@@ -373,6 +377,34 @@ public class AssetManagerTest extends TestCase {
 	}
 
 	/**
+	 * Test method for {@link net.bzresults.astmgr.AssetManager#renameUserFolder(java.lang.Long,java.lang.String)
+	 */
+	public void testZipFolderWithAsset() {
+		DAMFolder folderWithAsset = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+
+		try {
+			manager.changeToFolder(folderWithAsset.getParentFolder().getId());
+			Long folder2ZipId = folderWithAsset.getId();
+
+			manager.makeZipFileInsideDAM(ZIPFILENAME, new String[] { folder2ZipId.toString() }, new String[] {});
+
+			Set <DAMAsset> assets = manager.getCurrentFolder().getAssetFiles();
+			assertEquals(assets.size(), 1);
+			List<DAMAsset> assetList = assetMngr.findByFileName(ZIPFILENAME);
+			assertEquals(assetList.size(), 1);
+			File f = new File(assetList.get(0).getPathAndName());
+			assertTrue(f.exists() && f.isFile());
+		} catch (AssetManagerException ame) {
+			log.error(ame.getMessage());
+			fail("Could not register the created Zip file as an asset.");
+		} catch (Exception e) {
+			log.error(e.getMessage());
+			fail("Could not create Zip file with one folder and one asset.");
+		}
+
+	}
+
+	/**
 	 * Test method for {@link net.bzresults.astmgr.AssetManager#moveAsset(java.lang.String, java.lang.Long)}.
 	 */
 	public void testMoveAssetToRoot() {
@@ -471,9 +503,9 @@ public class AssetManagerTest extends TestCase {
 		toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
 		Long originalId = toFolder.getId();
 		String originalPath = toFolder.getPath();
-		
+
 		manager.renameUserFolder(originalId, renamedFolderToTest);
-		
+
 		List listFolders = folderMngr.findByName(localFolderToTest.getName());
 		assertEquals(listFolders.size(), 0);
 		listFolders = folderMngr.findByName(renamedFolderToTest);
@@ -487,12 +519,95 @@ public class AssetManagerTest extends TestCase {
 	}
 
 	/**
+	 * Test method for {@link net.bzresults.astmgr.AssetManager#renameUserFolder(java.lang.Long,java.lang.String)
+	 */
+	public void testZipOneAsset() {
+		DAMFolder folderWithAsset = (DAMFolder) folderMngr.getRoot(manager.getCriteria_values());
+
+		try {
+			Long folderWithAssetId = folderWithAsset.getId();
+			manager.changeToFolder(folderWithAssetId);
+			DAMAsset asset2Zip = (DAMAsset)assetMngr.findByFileName(newFileName).get(0);			
+
+			manager.makeZipFileInsideDAM(ZIPFILENAME2, new String[] {}, new String[] {asset2Zip.getId().toString()});
+
+			Set <DAMAsset> assets = manager.getCurrentFolder().getAssetFiles();
+			assertEquals(assets.size(), 3);
+			DAMAsset zipFile = (DAMAsset)assetMngr.findByFileName(ZIPFILENAME2).get(0);			
+			File f = new File(zipFile.getPathAndName());
+			assertTrue(f.exists() && f.isFile());
+		} catch (AssetManagerException ame) {
+			log.error(ame.getMessage());
+			fail("Could not register the created Zip file as an asset.");
+		} catch (Exception e) {
+			log.error(e.getMessage());
+			fail("Could not create Zip file with one folder and one asset.");
+		}
+
+	}
+
+	/**
 	 * Test method for {@link net.bzresults.astmgr.AssetManager#deleteAsset(java.lang.String)}.
 	 */
-	public void testDeleteAsset() {
-		DAMAsset assetBeforeDelete = (DAMAsset) assetMngr.findByFileName(newFileName).get(0);
+	public void testDeleteAssets() {
+		//delete 2nd zip file
+		DAMAsset assetBeforeDelete = (DAMAsset) assetMngr.findByFileName(ZIPFILENAME2).get(0);
 		String originalPath = assetBeforeDelete.getPathAndName();
-		log.debug("going to be deleting this: " + originalPath );
+		log.debug("going to be deleting this: " + originalPath);
+		try {
+			// DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+			manager.changeToFolder(assetBeforeDelete.getFolder().getId());
+		} catch (AssetManagerException ame) {
+			log.error(ame.getMessage());
+		}
+		if (manager.getCurrentFolder().getAssetFiles().isEmpty()) {
+			fail("No Asset files to delete");
+		} else {
+			try {
+
+				manager.deleteAsset(ZIPFILENAME2);
+
+			} catch (FileNotFoundException fnfe) {
+				log.error("Cannot find test file '" + ZIPFILENAME2 + "'");
+			} catch (IOException ioe) {
+				log.error("Cannot delete Asset file '" + ZIPFILENAME2 + "'");
+			}
+
+			assertEquals(assetMngr.findByFileName(ZIPFILENAME2).size(), 0);
+			File f = new File(originalPath);
+			assertTrue(!f.exists());
+		}
+		//delete 1st zip file
+		assetBeforeDelete = (DAMAsset) assetMngr.findByFileName(ZIPFILENAME).get(0);
+		originalPath = assetBeforeDelete.getPathAndName();
+		log.debug("going to be deleting this: " + originalPath);
+		try {
+			// DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
+			manager.changeToFolder(assetBeforeDelete.getFolder().getId());
+		} catch (AssetManagerException ame) {
+			log.error(ame.getMessage());
+		}
+		if (manager.getCurrentFolder().getAssetFiles().isEmpty()) {
+			fail("No Asset files to delete");
+		} else {
+			try {
+
+				manager.deleteAsset(ZIPFILENAME);
+
+			} catch (FileNotFoundException fnfe) {
+				log.error("Cannot find test file '" + ZIPFILENAME + "'");
+			} catch (IOException ioe) {
+				log.error("Cannot delete Asset file '" + ZIPFILENAME + "'");
+			}
+
+			assertEquals(assetMngr.findByFileName(ZIPFILENAME).size(), 0);
+			File f = new File(originalPath);
+			assertTrue(!f.exists());
+		}
+		//delete asset file
+		assetBeforeDelete = (DAMAsset) assetMngr.findByFileName(newFileName).get(0);
+		originalPath = assetBeforeDelete.getPathAndName();
+		log.debug("going to be deleting this: " + originalPath);
 		try {
 			// DAMFolder toFolder = (DAMFolder) folderMngr.findByName(localFolderToTest.getName()).get(0);
 			manager.changeToFolder(assetBeforeDelete.getFolder().getId());
