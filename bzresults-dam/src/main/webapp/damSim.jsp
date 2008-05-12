@@ -59,7 +59,7 @@ function showSessionInfo()
    msg += '<h4>Current Rooftop</h4>';
    msg += 'id: <c:choose><c:when test="${not empty rooftop}"><c:out value="${rooftop.id}"/></c:when><c:otherwise>no rooftop in session as key rooftop</c:otherwise></c:choose> <br/>';
    msg += 'name: <c:choose><c:when test="${not empty rooftop}"><c:out value="${rooftop.name}"/></c:when><c:otherwise>no rooftop in session as key rooftop</c:otherwise></c:choose> <br/>';
-   msg += '<h4>AssetManager</h4>';
+   msg +='<h4>AssetManager</h4>';
    <c:choose>
      <c:when test="${ empty sessionScope.am }">msg +='null';</c:when>
      <c:otherwise>
@@ -296,7 +296,7 @@ function showSessionInfo()
 								</tr>
 								<tr>
 									<td colspan="2">
-										<input type="button" value="Call moveFolder"
+										<input type="button" value="Call renameFolder"
 											onclick="doRenameFolderCall(this.form)" />
 									</td>
 								</tr>
@@ -315,6 +315,48 @@ function showSessionInfo()
 					folder in your DAM session
 					<br />
 					<br />
+				</li>
+				<li>
+					Call to
+					<b>zipFile</b> requires name of the zip file, list of folders and list of assets parameters
+					<br />
+					<blockquote>
+						<form style="padding: 6px 0">
+							<table>
+								<tr>
+									<td>
+										Zip File Name:
+									</td>
+									<td>
+										<input type="text" name="zipFileName" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										Folder Ids (comma delimitted):
+									</td>
+									<td>
+										<input type="text" name="zipFolderIds" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										Asset Ids (comma delimitted):
+									</td>
+									<td>
+										<input type="text" name="zipAssetIds" size="20" value="" />
+									</td>
+								</tr>
+								<tr>
+									<td>
+										&nbsp;
+										<input type="button" value="Call Zip File"
+											onclick="doZipFileCall(this.form)" />
+									</td>
+								</tr>
+							</table>
+						</form>
+					</blockquote>
 				</li>
 				<li>
 					Call to

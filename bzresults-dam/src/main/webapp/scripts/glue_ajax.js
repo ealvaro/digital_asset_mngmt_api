@@ -71,6 +71,16 @@
         });    
     }
     
+    function doZipFileCall(f)
+    {
+      var zipFileName = f.zipFileName.value;
+      var zipFolderIds = f.zipFolderIds.value;
+      var zipAssetIds = f.zipAssetIds.value;
+      var params = "name="+zipFileName+"&folderids="+zipFolderIds+"&assetids="+zipAssetIds;
+      doIt('zipFile',params)
+      return false;
+    }
+    
     function doAddAssetTagCall(f)
     {
       var assetName = f.addAssetName.value;
