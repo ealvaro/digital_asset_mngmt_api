@@ -69,8 +69,6 @@ public class AssetManagerTest extends TestCase {
 
 	private DAMAsset localAssetToTest;
 
-	private DAMTag localTagToTest;
-
 	String oldFileName;
 
 	String newFileName;

@@ -1,19 +1,19 @@
 package net.bzresults.astmgr.utils;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.io.File;
-import java.io.OutputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.util.zip.Deflater;
-import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.zip.ZipOutputStream;
 
 public class ZipArchive {
     private List<File> files = new ArrayList<File>();
