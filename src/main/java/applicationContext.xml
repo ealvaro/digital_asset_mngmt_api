@@ -13,16 +13,33 @@
 			<ref bean="sessionFactory" />
 		</property>
 	</bean>
-	<bean id="FolderDAO"
-		class="net.bzresults.astmgr.dao.FolderDAO">
+	<bean id="FolderDAO" class="net.bzresults.astmgr.dao.FolderDAO">
 		<property name="sessionFactory">
 			<ref bean="sessionFactory" />
 		</property>
 	</bean>
-	<bean id="AssetDAO"
-		class="net.bzresults.astmgr.dao.AssetDAO">
+	<bean id="AssetDAO" class="net.bzresults.astmgr.dao.AssetDAO">
 		<property name="sessionFactory">
 			<ref bean="sessionFactory" />
 		</property>
+	</bean>
+	<bean id="assetLocationMapper" class="net.bzresults.astmgr.beans.AssetLocationMapper">
+		<!--  first is map of protocol to url, 2nd is map of protocol to file system -->
+		<constructor-arg>
+			<map>
+				<entry key="assets://" value="http://media.bzresults.net/assets/" />
+				<entry key="autodata://" value="http://media.bzresults.net/something/" />
+			</map>
+		</constructor-arg>
+		<constructor-arg>
+			<map>
+				<entry key="assets://" value="/var/www/bzwebs/assets/" />
+				<entry key="autodata://" value="/var/www/bzwebs/something/" />
+			</map>
+		</constructor-arg>
+		<!--  apec base path ... special case because will still need to have clients serverid added after that -->
+		<constructor-arg>
+			<value>/var/www/bzwebs/apec/</value>
+		</constructor-arg>
 	</bean>
 </beans>

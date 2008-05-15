@@ -65,6 +65,7 @@ import org.springframework.web.multipart.MultipartFile;
  *         <li>change to a Folder</li>
  *         <li>move a Folder to an existing Folder</li>
  *         <li>delete a Folder</li>
+ *			<li>rename a Folder (Folder must exist under current folder)</li> 
  *         <li>protect/unprotect a Folder based on ownership</li>
  *         <li>change to parent Folder (will stay in root Folder if already there)</li>
  *         <li>create all Folders in a given path (if needed)</li>
@@ -74,6 +75,7 @@ import org.springframework.web.multipart.MultipartFile;
  *         <p>
  *         <ul>
  *         <li>create an Asset, (uploading a file)</li>
+ *         <li>create a zip file of one or more folders and/or ssets</li>
  *         <li>move an Asset to an existing Folder</li>
  *         <li>delete an Asset</li>
  *         <li>rename an Asset</li>
@@ -104,6 +106,7 @@ public class AssetManager implements IAssetManager {
 	private Long currentClientId;
 	private Long ownerId;
 	private String serverId;
+	private String site;
 
 	private String zipWorkingBaseDir = "/temp";
 
@@ -1391,6 +1394,34 @@ public class AssetManager implements IAssetManager {
 		this.ownerId = ownerId;
 	}
 
+	/**
+	 * @return the serverId
+	 */
+	public String getServerId() {
+		return serverId;
+	}
+
+	/**
+	 * @param serverId the serverId to set
+	 */
+	public void setServerId(String serverId) {
+		this.serverId = serverId;
+	}
+
+	/**
+	 * @return the site
+	 */
+	public String getSite() {
+		return site;
+	}
+
+	/**
+	 * @param site the site to set
+	 */
+	public void setSite(String site) {
+		this.site = site;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -1405,5 +1436,4 @@ public class AssetManager implements IAssetManager {
 	public Object[] getCriteria_values() {
 		return new Object[] { currentClientId, currentValveId };
 	}
-
 }

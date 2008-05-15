@@ -49,12 +49,14 @@ public class AssetManagerServlet extends HttpServlet {
 
 	private static final String ERROR_TAG = "error";
 	private static final String MSG_TAG = "msg";
+	
+	private XMLAssetManager xmlAM;
 
 	/**
 	 * Constructor of the object.
 	 */
 	public AssetManagerServlet() {
-		super();
+		this.xmlAM = new XMLAssetManager();
 	}
 
 	/**
@@ -81,6 +83,7 @@ public class AssetManagerServlet extends HttpServlet {
 		// Valve currentValve = (Valve) session.getAttribute(Constants.VALVE_KEY);
 		// ClientUser user = (ClientUser) session.getAttribute(Constants.BCC_USER_KEY);
 		// ClientUser user = WebHelper.getBccUser(request.getSession());
+		String strSite = "est";
 		String strServerid = "paolaserver";
 		String strClient = request.getParameter(Constants.CLIENT_KEY);
 		String strValve = request.getParameter(Constants.VALVE_KEY);
@@ -93,12 +96,12 @@ public class AssetManagerServlet extends HttpServlet {
 				strClient = ((Long) session.getAttribute(Constants.CLIENT_KEY)).toString();
 		if (strValve == null || strValve.equals(""))
 			if (session.getAttribute(Constants.VALVE_KEY) == null)
-				strValve = "V1A";
+				strValve = "V31A";
 			else
 				strValve = (String) session.getAttribute(Constants.VALVE_KEY);
 		if (strUser == null || strUser.equals(""))
 			if (session.getAttribute(Constants.BCC_USER_KEY) == null)
-				strUser = "1";
+				strUser = "4";
 			else
 				strUser = ((Long) session.getAttribute(Constants.BCC_USER_KEY)).toString();
 		action = (action == null) ? "" : action;
@@ -115,28 +118,29 @@ public class AssetManagerServlet extends HttpServlet {
 
 		if (needToCreateAMSession(am, strClient, strValve)) {
 			am = createAMSession(session, out, strClient, strValve, strUser, strServerid);
+			am.setSite(strSite);
 		}
 		if (action == null || action.equals("")) {
-			XMLAssetManager.sendXMLStructure(out, am.getRoot(), am.getCurrentValveId());
+			xmlAM.sendXMLStructure(out, am);
 		} else {
 			try {
 				processAction(request, am, action);
 				// ?action=closeSession
 				if (action.equals("closeSession")) {
-					XMLAssetManager.sendXMLMsg(out, MSG_TAG, "Session for clientid:" + am.getCurrentClientId()
+					xmlAM.sendXMLMsg(out, MSG_TAG, "Session for clientid:" + am.getCurrentClientId()
 							+ " has been closed.");
 					am = null;
 					session.setAttribute(AM_PARAM, am);
 				} else
 					processResponse(out, am, action);
 			} catch (AssetManagerException ame) {
-				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
+				xmlAM.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
 			} catch (FileUploadException fue) {
-				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:" + am.getCurrentClientId()
+				xmlAM.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:" + am.getCurrentClientId()
 						+ " had an error.");
 			} catch (Exception e) {
 				e.printStackTrace();
-				XMLAssetManager.sendXMLMsg(out, ERROR_TAG, "Error in parameters passed for action: " + action + ":"
+				xmlAM.sendXMLMsg(out, ERROR_TAG, "Error in parameters passed for action: " + action + ":"
 						+ e.getMessage() + " \ncurrent client id: " + am.getCurrentClientId());
 			}
 		}
@@ -163,7 +167,7 @@ public class AssetManagerServlet extends HttpServlet {
 		session.setAttribute(Constants.VALVE_KEY, strValve);
 		session.setAttribute(Constants.BCC_USER_KEY, cuserId);
 		log.debug("****** put new am in session with clientId : " + am.getCurrentClientId() + " valveId : "
-				+ am.getCurrentValveId());
+				+ am.getCurrentValveId() + " userId : " + am.getOwnerId());
 		return am;
 	}
 
@@ -270,10 +274,10 @@ public class AssetManagerServlet extends HttpServlet {
 				|| action.equals("changeToParent") || action.equals("queryFolder") || action.equals("findAssetsByName")
 				|| action.equals("findAssetsByTag") || action.equals("browseBZAssets") || action.equals("zipFile")
 				|| action.equals("renameUserFolder")) {
-			XMLAssetManager.sendXMLResponse(out, am.getCurrentFolder(), am.getCurrentValveId());
+			xmlAM.sendXMLResponse(out, am);
 		} else if (action.equals("addAssetTag") || action.equals("deleteAssetTagName")
 				|| action.equals("deleteAssetTagValue")) {
-			XMLAssetManager.sendShortXMLResponse(out, am.getCurrentFolder());
+			xmlAM.sendShortXMLResponse(out, am);
 		}
 	}
 

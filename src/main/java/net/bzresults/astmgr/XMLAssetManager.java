@@ -11,30 +11,46 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import net.bzresults.astmgr.beans.AssetLocationMapper;
+import net.bzresults.astmgr.dao.FolderDAO;
 import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
 import net.bzresults.astmgr.model.DAMTag;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 public class XMLAssetManager {
+	public static String CONFIG_FILE_LOCATION = "/applicationContext.xml";
+	private static final Log log = LogFactory.getLog(XMLAssetManager.class);
+
 	private static final String FOLDER_HTML_TAG = "folder";
 	private static final String ASSET_HTML_TAG = "asset";
 	private static final String ASSETS_HTML_TAG = "assets";
 	public static final String GENERAL_ASSET_TAG = "GEN";
 
-	public static void sendXMLStructure(PrintWriter out, DAMFolder currentFolder, String valveid) {
+	private AssetLocationMapper mapper;
+	private ClassPathXmlApplicationContext factory;
+
+	public XMLAssetManager() {
+		this.factory = new ClassPathXmlApplicationContext(CONFIG_FILE_LOCATION);
+		this.mapper = AssetLocationMapper.getFromApplicationContext(factory);
+	}
+
+	public void sendXMLStructure(PrintWriter out, AssetManager am) {
 		TransformerHandler hd = initHandler(out);
 		try {
 			hd.startDocument();
-			createXMLFolderHierarchy(hd, currentFolder, valveid);
+			createXMLFolderHierarchy(hd, am.getRoot(), am.getCurrentValveId(), am.getServerId());
 			hd.endDocument();
 		} catch (SAXException se) {
 		}
 	}
 
-	private static TransformerHandler initHandler(PrintWriter out) {
+	private TransformerHandler initHandler(PrintWriter out) {
 		StreamResult streamResult = new StreamResult(out);
 		SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
 		TransformerHandler hd = null;
@@ -55,23 +71,23 @@ public class XMLAssetManager {
 	 * @param currentFolder
 	 * @throws SAXException
 	 */
-	private static void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder, String valveid)
+	private void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder, String valveid, String serverId)
 			throws SAXException {
 		createFolderTag(hd, currentFolder);
 		if (currentFolder != null) {
-			createAssetsTag(hd, currentFolder);
+			createAssetsTag(hd, currentFolder, serverId);
 			Iterator folderIterator = currentFolder.getSubFolders().iterator();
 			while (folderIterator.hasNext()) {
 				DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
 				// FOLDER tag.
 				if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE) && dAMFolder.getValveId().equals(valveid))
-					createXMLFolderHierarchy(hd, dAMFolder, valveid);
+					createXMLFolderHierarchy(hd, dAMFolder, valveid, serverId);
 			}
 		}
 		hd.endElement("", "", FOLDER_HTML_TAG);
 	}
 
-	private static void createFolderTag(TransformerHandler hd, DAMFolder currentFolder) throws SAXException {
+	private void createFolderTag(TransformerHandler hd, DAMFolder currentFolder) throws SAXException {
 		AttributesImpl atts = new AttributesImpl();
 		// FOLDER tag.
 		atts.clear();
@@ -94,18 +110,20 @@ public class XMLAssetManager {
 		hd.startElement("", "", FOLDER_HTML_TAG, atts);
 	}
 
-	public static void sendXMLResponse(PrintWriter out, DAMFolder currentFolder, String valveid) {
+	public void sendXMLResponse(PrintWriter out, AssetManager am) {
+		DAMFolder currentFolder = am.getCurrentFolder();
 		TransformerHandler hd = initHandler(out);
 		try {
 			hd.startDocument();
 			createFolderTag(hd, currentFolder);
-			createAssetsTag(hd, currentFolder);
+			createAssetsTag(hd, currentFolder, am.getServerId());
 			Iterator folderIterator = currentFolder.getSubFolders().iterator();
 			if (folderIterator != null)
 				while (folderIterator.hasNext()) {
 					DAMFolder dAMFolder = (DAMFolder) folderIterator.next();
 					// FOLDER tag.
-					if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE) && dAMFolder.getValveId().equals(valveid)) {
+					if (dAMFolder.getHidden().equals(DAMFolder.VISIBLE)
+							&& dAMFolder.getValveId().equals(am.getCurrentValveId())) {
 						createFolderTag(hd, dAMFolder);
 						hd.endElement("", "", FOLDER_HTML_TAG);
 					}
@@ -117,17 +135,18 @@ public class XMLAssetManager {
 		}
 	}
 
-	public static void sendShortXMLResponse(PrintWriter out, DAMFolder currentFolder) {
+	public void sendShortXMLResponse(PrintWriter out, AssetManager am) {
+		DAMFolder currentFolder = am.getCurrentFolder();
 		TransformerHandler hd = initHandler(out);
 		try {
 			hd.startDocument();
-			createAssetsTag(hd, currentFolder);
+			createAssetsTag(hd, currentFolder, am.getServerId());
 			hd.endDocument();
 		} catch (SAXException se) {
 		}
 	}
 
-	private static void createAssetsTag(TransformerHandler hd, DAMFolder currentFolder) {
+	private void createAssetsTag(TransformerHandler hd, DAMFolder currentFolder, String serverId) {
 		Set<DAMAsset> assets = currentFolder.getAssetFiles();
 		if (assets.size() > 0)
 			try {
@@ -137,14 +156,14 @@ public class XMLAssetManager {
 				if (assetIterator != null)
 					while (assetIterator.hasNext()) {
 						DAMAsset dAMAsset = (DAMAsset) assetIterator.next();
-						createAssetTag(hd, dAMAsset);
+						createAssetTag(hd, dAMAsset, serverId);
 					}
 				hd.endElement("", "", ASSETS_HTML_TAG);
 			} catch (SAXException se) {
 			}
 	}
 
-	private static void createAssetTag(TransformerHandler hd, DAMAsset dAMAsset) throws SAXException {
+	private void createAssetTag(TransformerHandler hd, DAMAsset dAMAsset, String serverId) throws SAXException {
 		AttributesImpl atts = new AttributesImpl();
 		// ASSET tag.
 		atts.clear();
@@ -154,12 +173,14 @@ public class XMLAssetManager {
 		atts.addAttribute("", "", "upload_date", "CDATA", dAMAsset.getUploadDate().toString());
 		atts.addAttribute("", "", "owner_id", "CDATA", dAMAsset.getOwnerId().toString());
 		atts.addAttribute("", "", "path", "CDATA", dAMAsset.getPathAndName());
+		atts.addAttribute("", "", "url", "CDATA", this.mapper.getProtocolPathForFullFS(dAMAsset
+				.getPathAndName(), serverId));
 		createTags(atts, dAMAsset);
 		hd.startElement("", "", ASSET_HTML_TAG, atts);
 		hd.endElement("", "", ASSET_HTML_TAG);
 	}
 
-	private static void createTags(AttributesImpl atts, DAMAsset dAMAsset) {
+	private void createTags(AttributesImpl atts, DAMAsset dAMAsset) {
 		// TAGS as attributes
 		Iterator tagIterator = dAMAsset.getAssetTags().iterator();
 		if (tagIterator != null) {
@@ -177,7 +198,7 @@ public class XMLAssetManager {
 		}
 	}
 
-	public static void sendXMLMsg(PrintWriter out, String tagXML, String errorMsg) {
+	public void sendXMLMsg(PrintWriter out, String tagXML, String errorMsg) {
 		TransformerHandler hd = initHandler(out);
 		try {
 			hd.startDocument();
@@ -190,5 +211,13 @@ public class XMLAssetManager {
 			hd.endDocument();
 		} catch (SAXException se) {
 		}
+	}
+
+	/**
+	 * @param mapper
+	 *            the mapper to set
+	 */
+	public void setMapper(AssetLocationMapper mapper) {
+		this.mapper = mapper;
 	}
 }

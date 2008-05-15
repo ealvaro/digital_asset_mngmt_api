@@ -12,6 +12,7 @@ public class AllTests {
 		suite.addTestSuite(FolderDAOTest.class);
 		suite.addTestSuite(AssetDAOTest.class);
 		suite.addTestSuite(TagDAOTest.class);
+		suite.addTestSuite(AssetLocationMapperTest.class);
 		//suite.addTestSuite(AssetManagerServletTest.class);
 		//$JUnit-END$
 		return suite;
