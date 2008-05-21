@@ -40,11 +40,11 @@ public class XMLAssetManager {
 		this.mapper = AssetLocationMapper.getFromApplicationContext(factory);
 	}
 
-	public void sendXMLStructure(PrintWriter out, AssetManager am) {
+	public void sendXMLStructure(PrintWriter out, AssetManager am, DAMFolder root) {
 		TransformerHandler hd = initHandler(out);
 		try {
 			hd.startDocument();
-			createXMLFolderHierarchy(hd, am.getRoot(), am.getCurrentValveId(), am.getServerId());
+			createXMLFolderHierarchy(hd, root, am.getCurrentValveId(), am.getServerId());
 			hd.endDocument();
 		} catch (SAXException se) {
 		}
@@ -71,8 +71,8 @@ public class XMLAssetManager {
 	 * @param currentFolder
 	 * @throws SAXException
 	 */
-	private void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder, String valveid, String serverId)
-			throws SAXException {
+	private void createXMLFolderHierarchy(TransformerHandler hd, DAMFolder currentFolder, String valveid,
+			String serverId) throws SAXException {
 		createFolderTag(hd, currentFolder);
 		if (currentFolder != null) {
 			createAssetsTag(hd, currentFolder, serverId);
@@ -167,14 +167,16 @@ public class XMLAssetManager {
 		AttributesImpl atts = new AttributesImpl();
 		// ASSET tag.
 		atts.clear();
-		atts.addAttribute("", "", "id", "CDATA", dAMAsset.getId().toString());
+		// Assets with no id are virtual
+		if (dAMAsset.getId() != null)
+			atts.addAttribute("", "", "id", "CDATA", dAMAsset.getId().toString());
 		atts.addAttribute("", "", "file_name", "CDATA", dAMAsset.getFileName());
 		atts.addAttribute("", "", "read_only", "CDATA", dAMAsset.getReadOnly().toString());
 		atts.addAttribute("", "", "upload_date", "CDATA", dAMAsset.getUploadDate().toString());
 		atts.addAttribute("", "", "owner_id", "CDATA", dAMAsset.getOwnerId().toString());
 		atts.addAttribute("", "", "path", "CDATA", dAMAsset.getPathAndName());
-		atts.addAttribute("", "", "url", "CDATA", this.mapper.getProtocolPathForFullFS(dAMAsset
-				.getPathAndName(), serverId));
+		atts.addAttribute("", "", "url", "CDATA", this.mapper.getProtocolPathForFullFS(dAMAsset.getPathAndName(),
+				serverId));
 		createTags(atts, dAMAsset);
 		hd.startElement("", "", ASSET_HTML_TAG, atts);
 		hd.endElement("", "", ASSET_HTML_TAG);

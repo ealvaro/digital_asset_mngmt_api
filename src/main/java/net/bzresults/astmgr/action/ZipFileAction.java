@@ -32,8 +32,11 @@ public class ZipFileAction implements IDAMAction {
 				listFolders = folders.split(",");
 			if (assets != null && !assets.equals(""))
 				listAssets = assets.split(",");
-			am.makeZipFileInsideDAM(zipFileName, listFolders, listAssets);
-			//zipFileName = am.makeZipFileSomewhere(zipFileName, listFolders, listAssets);
+			if (listFolders != null || listAssets != null) {
+				am.makeZipFileInsideDAM(zipFileName, listFolders, listAssets);
+				// zipFileName = am.makeZipFileSomewhere(zipFileName, listFolders, listAssets);
+			} else
+				throw new Exception("Invalid/missing 'folderids' or 'assetids' parameters");
 		} else
 			throw new Exception("Invalid/missing 'name' parameter");
 	}
