@@ -23,6 +23,11 @@
 			<ref bean="sessionFactory" />
 		</property>
 	</bean>
+	<bean id="fsdam" class="net.bzresults.astmgr.FSAssetManager">
+		<property name="bzRootDir" value="/var/www/bzwebs/apec" />
+		<property name="oemRootDir" value="/var/www/bzwebs/media/manufacturer/logos" />
+		<property name="autosRootDir" value="/var/www/bzwebs/common-webapps/vdc/standard" />
+	</bean>
 	<bean id="assetLocationMapper" class="net.bzresults.astmgr.beans.AssetLocationMapper">
 		<!--  first is map of protocol to url, 2nd is map of protocol to file system -->
 		<constructor-arg>

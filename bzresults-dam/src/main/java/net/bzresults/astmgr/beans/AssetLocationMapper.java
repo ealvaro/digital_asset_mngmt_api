@@ -141,7 +141,7 @@ public class AssetLocationMapper {
      *   
      */
     public String getProtocolPathForFullFS(String fullFileSystemPath, String serverId) {
-    	String protocolPath = null;
+    	String protocolPath = "unknown";
 		if(serverId == null) {
 			throw new IllegalArgumentException("Path cannot be determined from Client object passed. Client must have non null WebConfig and ServerId");
 		}

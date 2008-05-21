@@ -49,7 +49,7 @@ public class AssetManagerServlet extends HttpServlet {
 
 	private static final String ERROR_TAG = "error";
 	private static final String MSG_TAG = "msg";
-	
+
 	private XMLAssetManager xmlAM;
 
 	/**
@@ -83,28 +83,12 @@ public class AssetManagerServlet extends HttpServlet {
 		// Valve currentValve = (Valve) session.getAttribute(Constants.VALVE_KEY);
 		// ClientUser user = (ClientUser) session.getAttribute(Constants.BCC_USER_KEY);
 		// ClientUser user = WebHelper.getBccUser(request.getSession());
-		String strSite = "est";
-		String strServerid = "paolaserver";
-		String strClient = request.getParameter(Constants.CLIENT_KEY);
-		String strValve = request.getParameter(Constants.VALVE_KEY);
-		String strUser = request.getParameter(Constants.BCC_USER_KEY);
 		String action = request.getParameter(Constants.ACTION_KEY);
-		if (strClient == null || strClient.equals(""))
-			if (session.getAttribute(Constants.CLIENT_KEY) == null)
-				strClient = "20";
-			else
-				strClient = ((Long) session.getAttribute(Constants.CLIENT_KEY)).toString();
-		if (strValve == null || strValve.equals(""))
-			if (session.getAttribute(Constants.VALVE_KEY) == null)
-				strValve = "V31A";
-			else
-				strValve = (String) session.getAttribute(Constants.VALVE_KEY);
-		if (strUser == null || strUser.equals(""))
-			if (session.getAttribute(Constants.BCC_USER_KEY) == null)
-				strUser = "4";
-			else
-				strUser = ((Long) session.getAttribute(Constants.BCC_USER_KEY)).toString();
-		action = (action == null) ? "" : action;
+		String strClient = getDAMAttribute(request, Constants.CLIENT_KEY, "20");
+		String strValve = getDAMAttribute(request, Constants.VALVE_KEY, "V31A");
+		String strUser = getDAMAttribute(request, Constants.BCC_USER_KEY, "4");
+		String strServerid = "paolaserver";
+		String strSite = "est";
 		String clientIdDebugStr = strClient;
 		String actionDebugStr = (action == null) ? "null" : action;
 		String amDebugStr = (am == null) ? "am is null at start of request" : am.getCurrentClientId() + " "
@@ -120,32 +104,31 @@ public class AssetManagerServlet extends HttpServlet {
 			am = createAMSession(session, out, strClient, strValve, strUser, strServerid);
 			am.setSite(strSite);
 		}
-		if (action == null || action.equals("")) {
-			xmlAM.sendXMLStructure(out, am);
-		} else {
-			try {
-				processAction(request, am, action);
-				// ?action=closeSession
-				if (action.equals("closeSession")) {
-					xmlAM.sendXMLMsg(out, MSG_TAG, "Session for clientid:" + am.getCurrentClientId()
-							+ " has been closed.");
-					am = null;
-					session.setAttribute(AM_PARAM, am);
-				} else
-					processResponse(out, am, action);
-			} catch (AssetManagerException ame) {
-				xmlAM.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
-			} catch (FileUploadException fue) {
-				xmlAM.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:" + am.getCurrentClientId()
-						+ " had an error.");
-			} catch (Exception e) {
-				e.printStackTrace();
-				xmlAM.sendXMLMsg(out, ERROR_TAG, "Error in parameters passed for action: " + action + ":"
-						+ e.getMessage() + " \ncurrent client id: " + am.getCurrentClientId());
-			}
+		try {
+			processAction(request, am, action);
+			processResponse(out, am, action);
+		} catch (AssetManagerException ame) {
+			xmlAM.sendXMLMsg(out, ERROR_TAG, ame.getMessage());
+		} catch (FileUploadException fue) {
+			xmlAM.sendXMLMsg(out, ERROR_TAG, "Multiple upload for clientid:" + am.getCurrentClientId()
+					+ " had an error.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			xmlAM.sendXMLMsg(out, ERROR_TAG, "Error in parameters passed for action: " + action + ":" + e.getMessage()
+					+ " \ncurrent client id: " + am.getCurrentClientId());
 		}
 		out.flush();
 		out.close();
+	}
+
+	private String getDAMAttribute(HttpServletRequest request, String key, String defValue) {
+		if (request.getParameter(key) == null)
+			if (request.getSession().getAttribute(key) == null)
+				return defValue;
+			else
+				return request.getSession().getAttribute(key).toString();
+		else
+			return request.getParameter(key);
 	}
 
 	private boolean needToCreateAMSession(AssetManager am, String client, String valve) {
@@ -174,110 +157,125 @@ public class AssetManagerServlet extends HttpServlet {
 	private void processAction(HttpServletRequest request, AssetManager am, String action) throws FileUploadException,
 			IOException, Exception, AssetManagerException {
 		IDAMAction damAction = null;
-		// ?action=createUserFolder&name=testingfolder
-		if (action.equals("createUserFolder")) {
-			damAction = new CreateUserFolderAction(request, am);
-		} else
-		// ?action=moveFolder&id=testingfolder&toid=3 (where My%20Images folder id = 3)s
-		if (action.equals("moveFolder")) {
-			damAction = new MoveFolderAction(request, am);
-		} else
-		// ?action=changeToFolder&id=3
-		if (action.equals("changeToFolder")) {
-			damAction = new ChangeToFolderAction(request, am);
-		} else
-		// ?action=createAsset&name1=JUnit%20Test%20Asset.jpg&file1=%2FJUnit%20Test%20Asset.jpg
-		if (action.equals("createAsset")) {
-			damAction = new CreateAssetAction(request, am);
-		} else
-		// ?action=renameAsset&name=JUnit%20Test%20Asset.jpg&toname=My%20Picture.jpg
-		if (action.equals("renameAsset")) {
-			damAction = new RenameAssetAction(request, am);
-		} else
-		// ?action=renameUserFolder&id=3&toname=renamed_folder
-		if (action.equals("renameUserFolder")) {
-			damAction = new RenameFolderAction(request, am);
-		} else
-		// ?action=moveAsset&name=My%20Picture.jpg&toid=3
-		if (action.equals("moveAsset")) {
-			damAction = new MoveAssetAction(request, am);
-		} else
-		// ?action=protectAsset&name=My%20Picture.jpg
-		if (action.equals("protectAsset")) {
-			damAction = new ProtectAssetAction(request, am);
-		} else
-		// ?action=unprotectAsset&name=My%20Picture.jpg
-		if (action.equals("unprotectAsset")) {
-			damAction = new UnProtectAssetAction(request, am);
-		} else
-		// ?action=protectFolder&id=3
-		if (action.equals("protectFolder")) {
-			damAction = new ProtectFolderAction(request, am);
-		} else
-		// ?action=unprotectFolder&id=3
-		if (action.equals("unprotectFolder")) {
-			damAction = new UnProtectFolderAction(request, am);
-		} else
-		// ?action=deleteFolder&id=3
-		if (action.equals("deleteFolder")) {
-			damAction = new DeleteFolderAction(request, am);
-		} else
-		// ?action=deleteAsset&name=My%20Picture.jpg
-		if (action.equals("deleteAsset")) {
-			damAction = new DeleteAssetAction(request, am);
-		} else
-		// ?action=changeToParent
-		if (action.equals("changeToParent")) {
-			damAction = new ChangeToParentAction(request, am);
-		} else
-		// ?action=queryFolder&name=recent
-		if (action.equals("queryFolder")) {
-			damAction = new QueryFolderAction(request, am);
-		} else
-		// ?action=addAssetTag&name=My%20Picture.jpg&tag=make&value=Ford
-		if (action.equals("addAssetTag")) {
-			damAction = new AddAssetTagAction(request, am);
-		} else
-		// ?action=deleteAssetTagName&name=My%20Picture.jpg&tag=make
-		if (action.equals("deleteAssetTagName")) {
-			damAction = new DeleteAssetTagNameAction(request, am);
-		} else
-		// ?action=deleteAssetTagValue&name=My%20Picture.jpg&value=Ford
-		if (action.equals("deleteAssetTagValue")) {
-			damAction = new DeleteAssetTagValueAction(request, am);
-		} else
-		// ?action=findAssetsByName&name=My%20Pic
-		if (action.equals("findAssetsByName")) {
-			damAction = new FindAssetsByNameAction(request, am);
-		} else
-		// ?action=findAssetsByTag&tag=make&value=Ford
-		if (action.equals("findAssetsByTag")) {
-			damAction = new FindAssetsByTagAction(request, am);
-		} else
-		// ?action=zipFile&name=myZip.zip&folderids=1,2,3,4&assetids=44,54,63,78,31
-		if (action.equals("zipFile")) {
-			damAction = new ZipFileAction(request, am);
-		} else
-		// ?action=browseBZAssets
-		if (action.equals("browseBZAssets")) {
-			damAction = new BrowseBZAssetsAction(request, am);
+		if (action == null || action.equals("")) {
+			// do nothing
+		} else {
+			// ?action=closeSession
+			if (action.equals("closeSession")) {
+				am = null;
+				request.getSession().setAttribute(AM_PARAM, am);
+			} else
+			// ?action=createUserFolder&name=testingfolder
+			if (action.equals("createUserFolder")) {
+				damAction = new CreateUserFolderAction(request, am);
+			} else
+			// ?action=moveFolder&id=testingfolder&toid=3 (where My%20Images folder id = 3)s
+			if (action.equals("moveFolder")) {
+				damAction = new MoveFolderAction(request, am);
+			} else
+			// ?action=changeToFolder&id=3
+			if (action.equals("changeToFolder")) {
+				damAction = new ChangeToFolderAction(request, am);
+			} else
+			// ?action=createAsset&name1=JUnit%20Test%20Asset.jpg&file1=%2FJUnit%20Test%20Asset.jpg
+			if (action.equals("createAsset")) {
+				damAction = new CreateAssetAction(request, am);
+			} else
+			// ?action=renameAsset&name=JUnit%20Test%20Asset.jpg&toname=My%20Picture.jpg
+			if (action.equals("renameAsset")) {
+				damAction = new RenameAssetAction(request, am);
+			} else
+			// ?action=renameUserFolder&id=3&toname=renamed_folder
+			if (action.equals("renameUserFolder")) {
+				damAction = new RenameFolderAction(request, am);
+			} else
+			// ?action=moveAsset&name=My%20Picture.jpg&toid=3
+			if (action.equals("moveAsset")) {
+				damAction = new MoveAssetAction(request, am);
+			} else
+			// ?action=protectAsset&name=My%20Picture.jpg
+			if (action.equals("protectAsset")) {
+				damAction = new ProtectAssetAction(request, am);
+			} else
+			// ?action=unprotectAsset&name=My%20Picture.jpg
+			if (action.equals("unprotectAsset")) {
+				damAction = new UnProtectAssetAction(request, am);
+			} else
+			// ?action=protectFolder&id=3
+			if (action.equals("protectFolder")) {
+				damAction = new ProtectFolderAction(request, am);
+			} else
+			// ?action=unprotectFolder&id=3
+			if (action.equals("unprotectFolder")) {
+				damAction = new UnProtectFolderAction(request, am);
+			} else
+			// ?action=deleteFolder&id=3
+			if (action.equals("deleteFolder")) {
+				damAction = new DeleteFolderAction(request, am);
+			} else
+			// ?action=deleteAsset&name=My%20Picture.jpg
+			if (action.equals("deleteAsset")) {
+				damAction = new DeleteAssetAction(request, am);
+			} else
+			// ?action=changeToParent
+			if (action.equals("changeToParent")) {
+				damAction = new ChangeToParentAction(request, am);
+			} else
+			// ?action=queryFolder&name=recent
+			if (action.equals("queryFolder")) {
+				damAction = new QueryFolderAction(request, am);
+			} else
+			// ?action=addAssetTag&name=My%20Picture.jpg&tag=make&value=Ford
+			if (action.equals("addAssetTag")) {
+				damAction = new AddAssetTagAction(request, am);
+			} else
+			// ?action=deleteAssetTagName&name=My%20Picture.jpg&tag=make
+			if (action.equals("deleteAssetTagName")) {
+				damAction = new DeleteAssetTagNameAction(request, am);
+			} else
+			// ?action=deleteAssetTagValue&name=My%20Picture.jpg&value=Ford
+			if (action.equals("deleteAssetTagValue")) {
+				damAction = new DeleteAssetTagValueAction(request, am);
+			} else
+			// ?action=findAssetsByName&name=My%20Pic
+			if (action.equals("findAssetsByName")) {
+				damAction = new FindAssetsByNameAction(request, am);
+			} else
+			// ?action=findAssetsByTag&tag=make&value=Ford
+			if (action.equals("findAssetsByTag")) {
+				damAction = new FindAssetsByTagAction(request, am);
+			} else
+			// ?action=zipFile&name=myZip.zip&folderids=1,2,3,4&assetids=44,54,63,78,31
+			if (action.equals("zipFile")) {
+				damAction = new ZipFileAction(request, am);
+			} else
+			// ?action=browseBZAssets
+			if (action.equals("browseBZAssets")) {
+				damAction = new BrowseBZAssetsAction(request, am);
+			}
+			if (damAction != null)
+				damAction.execute();
 		}
-		if (damAction != null)
-			damAction.execute();
 	}
 
 	private void processResponse(PrintWriter out, AssetManager am, String action) {
-		if (action.equals("createUserFolder") || action.equals("moveFolder") || action.equals("changeToFolder")
+		if (action == null || action.equals("")) {
+			xmlAM.sendXMLStructure(out, am, am.getRoot());
+		} else if (action.equals("queryFolder")) {
+			xmlAM.sendXMLStructure(out, am, am.getCurrentFolder());
+		} else if (action.equals("createUserFolder") || action.equals("moveFolder") || action.equals("changeToFolder")
 				|| action.equals("createAsset") || action.equals("renameAsset") || action.equals("moveAsset")
 				|| action.equals("protectAsset") || action.equals("unprotectAsset") || action.equals("protectFolder")
 				|| action.equals("unprotectFolder") || action.equals("deleteFolder") || action.equals("deleteAsset")
-				|| action.equals("changeToParent") || action.equals("queryFolder") || action.equals("findAssetsByName")
+				|| action.equals("changeToParent") || action.equals("findAssetsByName")
 				|| action.equals("findAssetsByTag") || action.equals("browseBZAssets") || action.equals("zipFile")
 				|| action.equals("renameUserFolder")) {
 			xmlAM.sendXMLResponse(out, am);
 		} else if (action.equals("addAssetTag") || action.equals("deleteAssetTagName")
 				|| action.equals("deleteAssetTagValue")) {
 			xmlAM.sendShortXMLResponse(out, am);
+		} else if (action.equals("closeSession")) {
+			xmlAM.sendXMLMsg(out, MSG_TAG, "Session for clientid:" + am.getCurrentClientId() + " has been closed.");
 		}
 	}
 
