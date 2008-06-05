@@ -42,8 +42,9 @@ public class AssetManagerTest extends TestCase {
 	// change the following constant values to your own before testing against your db
 	private static final String VALVEID = "V31A";
 	private static final Long CLIENTID = 20L;
-	private static final Long BCCUSERID = 1L;
+	private static final Long BCCUSERID = 4L;
 	private static final String SERVERID = "paolaserver";
+	private static final String VALVENAME = "Tasca FLMM";
 	private static final Long ANOTHERBCCUSERID = 12L;
 
 	private static final String TESTFILENAME = "testDuke.jpg";
@@ -90,6 +91,10 @@ public class AssetManagerTest extends TestCase {
 		this.tagMngr = tagMngr;
 	}
 
+	public void setFsdam(FSAssetManager fsdam) {
+		this.fsdam = fsdam;
+	}
+
 	/**
 	 * @param name
 	 */
@@ -107,7 +112,8 @@ public class AssetManagerTest extends TestCase {
 	 */
 	protected void setUp() throws Exception {
 		super.setUp();
-		manager = new AssetManager(VALVEID, CLIENTID, BCCUSERID, SERVERID, folderMngr, assetMngr, tagMngr, fsdam);
+		manager = new AssetManager(VALVEID, CLIENTID, BCCUSERID, SERVERID, VALVENAME, folderMngr, assetMngr, tagMngr,
+				fsdam);
 		localFolderToTest = new DAMFolder(manager.getCurrentFolder(), "JUnit Test Folder", "test_folder",
 				"*.jpg,*.gif", VALVEID, CLIENTID, DAMFolder.VISIBLE, DAMFolder.WRITABLE, DAMFolder.NOT_SYSTEM, "/",
 				new HashSet<DAMAsset>(0), new HashSet<DAMFolder>(0));
@@ -171,14 +177,14 @@ public class AssetManagerTest extends TestCase {
 	 * Test method for {@link net.bzresults.astmgr.AssetManager#changeToFolder(java.lang.Long)
 	 */
 	public void testChangeToFolder() {
-		DAMFolder toFolder = (DAMFolder) folderMngr.findByName(VALVEID).get(0);
+		DAMFolder toFolder = (DAMFolder) folderMngr.findByName(VALVENAME).get(0);
 		try {
 			manager.changeToFolder(toFolder.getId());
 		} catch (AssetManagerException ame) {
 			log.error(ame.getMessage());
 		}
 
-		assertEquals(manager.getCurrentFolder().getName(), VALVEID);
+		assertEquals(manager.getCurrentFolder().getName(), VALVENAME);
 	}
 
 	/**
@@ -299,7 +305,7 @@ public class AssetManagerTest extends TestCase {
 		manager.addAssetTag(TESTFILENAME, "year", "2007");
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
 				6);
-		manager.addAssetTag(TESTFILENAME, "l'arrière-boutique");
+		manager.addAssetTag(TESTFILENAME, FRENCHWORD);
 		assertEquals(tagMngr.findByAssetId(((DAMAsset) assetMngr.findByFileName(TESTFILENAME).get(0)).getId()).size(),
 				7);
 		manager.addAssetTag(TESTFILENAME, "cool");
@@ -431,7 +437,7 @@ public class AssetManagerTest extends TestCase {
 	 */
 	public void testZipFileWithFoldersAndAssetsParams() {
 		DAMAsset zipAsset = (DAMAsset) assetMngr.findByFileName(ZIPFILENAME).get(0);
-		DAMFolder folderWithAssets = (DAMFolder) folderMngr.findByName(VALVEID).get(0);
+		DAMFolder folderWithAssets = (DAMFolder) folderMngr.findByName(VALVENAME).get(0);
 		try {
 			manager.makeZipFileInsideDAM(ZIPFILENAME3, new String[] { folderWithAssets.getId().toString() },
 					new String[] { zipAsset.getId().toString() });
@@ -674,7 +680,7 @@ public class AssetManagerTest extends TestCase {
 		Long moveToFolderId = null;
 		String moveToFolderName = null;
 		moveToFolderId = manager.getValveFolder().getId();
-		moveToFolderName = manager.getValveFolder().getName();
+		moveToFolderName = manager.getValveFolder().getValveId();
 		log.debug("assigning " + moveToFolderName + " with id " + moveToFolderId + " as the move to folder");
 
 		// creation ....

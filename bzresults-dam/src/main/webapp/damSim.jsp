@@ -471,7 +471,7 @@ function showSessionInfo()
 										Asset name to move (from current folder):
 									</td>
 									<td>
-										<input type="text" name="moveAssetName" size="20" value="" />
+										<input type="text" name="moveAssetName" size="30" value="" />
 									</td>
 								</tr>
 								<tr>
@@ -484,7 +484,7 @@ function showSessionInfo()
 								</tr>
 								<tr>
 									<td colspan="2">
-										<input type="button" value="Call moveAssetFolder"
+										<input type="button" value="Call moveAsset2Folder"
 											onclick="doMoveAssetToFolderCall(this.form)" />
 									</td>
 								</tr>

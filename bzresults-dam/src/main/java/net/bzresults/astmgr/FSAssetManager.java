@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import net.bzresults.astmgr.beans.AssetLocationMapper;
 import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
 import net.bzresults.astmgr.utils.ImageUtils;
@@ -33,15 +34,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class FSAssetManager {
 
 	private static final Log log = LogFactory.getLog(FSAssetManager.class);
-
-	private static final String BZROOTDIR = "/var/www/bzwebs/apec";
-	private static final String OEMROOTDIR = "/var/www/bzwebs/media/manufacturer/logos";
-	private static final String AUTOSROOTDIR = "/var/www/bzwebs/common-webapps/vdc/standard";
 	private static final String ASSETSZIPFOLDER = "/assets";
 	private String zipWorkingBaseDir = "/temp";
-	private String bzRootDir;
-	private String oemRootDir;
-	private String autosRootDir;
+	private AssetLocationMapper assetLocationMapper;
 
 	void deleteAssetFile(DAMAsset dAMAsset) throws IOException {
 
@@ -249,42 +244,28 @@ public class FSAssetManager {
 	 * @return the autosRootDir
 	 */
 	public String getAutosRootDir() {
-		return (this.autosRootDir == null ? AUTOSROOTDIR : this.autosRootDir);
-	}
-	/**
-	 * @param autosRootDir
-	 *            the autosRootDir to set
-	 */
-	public void setAutosRootDir(String autosRootDir) {
-		this.autosRootDir = autosRootDir;
+		return this.assetLocationMapper.getFileSystemMapping("autodata://");
 	}
 	
 	/**
 	 * @return the oemRootDir
 	 */
 	public String getOemRootDir() {
-		return (this.oemRootDir == null ? OEMROOTDIR : this.oemRootDir);
-	}
-	/**
-	 * @param oemRootDir
-	 *            the oemRootDir to set
-	 */
-	public void setOemRootDir(String oemRootDir) {
-		this.oemRootDir = oemRootDir;
+		return this.assetLocationMapper.getFileSystemMapping("oemlogos://");
 	}
 	
 	/**
 	 * @return the bzRootDir
 	 */
 	public String getBzRootDir() {
-		return (this.bzRootDir == null ? BZROOTDIR : this.bzRootDir);
-	}
-	/**
-	 * @param bzRootDir
-	 *            the bzRootDir to set
-	 */
-	public void setBzRootDir(String bzRootDir) {
-		this.bzRootDir = bzRootDir;
+		return this.assetLocationMapper.getApecBaseFileSystemPath();
 	}
 
+	/**
+	 * @param assetLocationMapper
+	 *            the assetLocationMapper to set
+	 */
+	public void setAssetLocationMapper(AssetLocationMapper assetLocationMapper) {
+		this.assetLocationMapper = assetLocationMapper;
+	}
 }

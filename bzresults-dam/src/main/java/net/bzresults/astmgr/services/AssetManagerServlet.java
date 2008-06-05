@@ -89,6 +89,7 @@ public class AssetManagerServlet extends HttpServlet {
 		String strUser = getDAMAttribute(request, Constants.BCC_USER_KEY, "4");
 		String strServerid = "paolaserver";
 		String strSite = "est";
+		String valveName = "Tasca FLMM";
 		String clientIdDebugStr = strClient;
 		String actionDebugStr = (action == null) ? "null" : action;
 		String amDebugStr = (am == null) ? "am is null at start of request" : am.getCurrentClientId() + " "
@@ -101,7 +102,7 @@ public class AssetManagerServlet extends HttpServlet {
 				+ actionDebugStr + "\n am in session: " + amDebugStr + "\n" + amCurFolderDebugStr + "\n\n");
 
 		if (needToCreateAMSession(am, strClient, strValve)) {
-			am = createAMSession(session, out, strClient, strValve, strUser, strServerid);
+			am = createAMSession(session, out, strClient, strValve, valveName, strUser, strServerid);
 			am.setSite(strSite);
 		}
 		try {
@@ -140,11 +141,11 @@ public class AssetManagerServlet extends HttpServlet {
 	}
 
 	private AssetManager createAMSession(HttpSession session, PrintWriter out, String strClient, String strValve,
-			String strUser, String strServerid) {
+			String valveName, String strUser, String strServerid) {
 		AssetManager am = null;
 		long clientId = Long.parseLong(strClient);
 		long cuserId = Long.parseLong(strUser);
-		am = new AssetManager(strValve, clientId, cuserId, strServerid);
+		am = new AssetManager(strValve, clientId, cuserId, strServerid, valveName);
 		session.setAttribute(AM_PARAM, am);
 		session.setAttribute(Constants.CLIENT_KEY, clientId);
 		session.setAttribute(Constants.VALVE_KEY, strValve);

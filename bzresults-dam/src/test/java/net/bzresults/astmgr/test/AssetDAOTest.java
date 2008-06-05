@@ -1,6 +1,3 @@
-/**
- * 
- */
 package net.bzresults.astmgr.test;
 
 import java.util.Date;
@@ -13,8 +10,6 @@ import net.bzresults.astmgr.dao.FolderDAO;
 import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
@@ -22,8 +17,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  * 
  */
 public class AssetDAOTest extends TestCase {
-	private static final Log log = LogFactory.getLog(AssetDAOTest.class);
-
 	public static String CONFIG_FILE_LOCATION = "/applicationContext.xml";
 
 	private static final String VALVEID = "V54A";

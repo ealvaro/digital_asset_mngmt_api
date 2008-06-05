@@ -32,12 +32,12 @@ public class XMLAssetManager {
 	private static final String ASSETS_HTML_TAG = "assets";
 	public static final String GENERAL_ASSET_TAG = "GEN";
 
-	private AssetLocationMapper mapper;
+	private AssetLocationMapper assetLocationMapper;
 	private ClassPathXmlApplicationContext factory;
 
 	public XMLAssetManager() {
 		this.factory = new ClassPathXmlApplicationContext(CONFIG_FILE_LOCATION);
-		this.mapper = AssetLocationMapper.getFromApplicationContext(factory);
+		this.assetLocationMapper = AssetLocationMapper.getFromApplicationContext(factory);
 	}
 
 	public void sendXMLStructure(PrintWriter out, AssetManager am, DAMFolder root) {
@@ -175,7 +175,7 @@ public class XMLAssetManager {
 		atts.addAttribute("", "", "upload_date", "CDATA", dAMAsset.getUploadDate().toString());
 		atts.addAttribute("", "", "owner_id", "CDATA", dAMAsset.getOwnerId().toString());
 		atts.addAttribute("", "", "path", "CDATA", dAMAsset.getPathAndName());
-		atts.addAttribute("", "", "url", "CDATA", this.mapper.getProtocolPathForFullFS(dAMAsset.getPathAndName(),
+		atts.addAttribute("", "", "url", "CDATA", this.assetLocationMapper.getProtocolPathForFullFS(dAMAsset.getPathAndName(),
 				serverId));
 		createTags(atts, dAMAsset);
 		hd.startElement("", "", ASSET_HTML_TAG, atts);
@@ -219,7 +219,7 @@ public class XMLAssetManager {
 	 * @param mapper
 	 *            the mapper to set
 	 */
-	public void setMapper(AssetLocationMapper mapper) {
-		this.mapper = mapper;
+	public void setAssetLocationMapper(AssetLocationMapper assetLocationMapper) {
+		this.assetLocationMapper = assetLocationMapper;
 	}
 }

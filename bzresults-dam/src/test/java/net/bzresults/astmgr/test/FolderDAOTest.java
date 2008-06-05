@@ -6,13 +6,9 @@ import junit.framework.TestCase;
 import net.bzresults.astmgr.dao.FolderDAO;
 import net.bzresults.astmgr.model.DAMFolder;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class FolderDAOTest extends TestCase {
-	private static final Log log = LogFactory.getLog(FolderDAO.class);
-
 	public static String CONFIG_FILE_LOCATION = "/applicationContext.xml";
 
 	private static final String VALVEID = "V54A";
