@@ -5,11 +5,9 @@ package net.bzresults.astmgr.test;
 
 import junit.framework.TestCase;
 import net.bzresults.astmgr.beans.AssetLocationMapper;
-import net.bzresults.astmgr.dao.AssetDAO;
-import net.bzresults.astmgr.dao.FolderDAO;
-import net.bzresults.astmgr.dao.TagDAO;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class AssetLocationMapperTest extends TestCase {
@@ -27,7 +25,7 @@ public class AssetLocationMapperTest extends TestCase {
 	private AssetLocationMapper assetLocationMapper;
 	// private ClientDao clientService; // = new HibernateClientDaoImpl();
 
-	private static Logger log = Logger.getLogger(AssetLocationMapperTest.class);
+	private static Log log = LogFactory.getLog(AssetLocationMapperTest.class);
 
 	// these are used as expected results, set in onSetUp .. if add other protocols add expected values here as well as
 	// adding tests
@@ -74,18 +72,16 @@ public class AssetLocationMapperTest extends TestCase {
 	public void testGetUrlMappings() throws Exception {
 		// here hard code first expected param as what you really think is in your applicationContext-constants.xml
 		assertEquals("http://media.bzresults.net/assets/", assetLocationMapper.getUrlMapping("assets://"));
-		assertEquals("http://media.bzresults.net/something/", assetLocationMapper.getUrlMapping("autodata://"));
-		// assertEquals("http://media.lynnslaptop.dyndns.org:8093/assets/",
-		// assetLocationMapper.getUrlMapping("assets://"));
-		// assertEquals("http://media.lynnslaptop.dyndns.org:8093/something/",
-		// assetLocationMapper.getUrlMapping("autodata://"));
+		assertEquals("http://media.bzresults.net/vdc/standard/", assetLocationMapper.getUrlMapping("autodata://"));
+    	//assertEquals("http://media.lynnslaptop.dyndns.org:8093/assets/", assetLocationMapper.getUrlMapping("assets://"));
+    	//assertEquals("http://media.lynnslaptop.dyndns.org:8093/vdc/standard/", assetLocationMapper.getUrlMapping("autodata://"));
 
 	}
 
 	public void testGetFileSystemMappings() throws Exception {
 		// here hard code first expected param as what you really think is in your applicationContext-constants.xml
 		assertEquals("/var/www/bzwebs/assets/", assetLocationMapper.getFileSystemMapping("assets://"));
-		assertEquals("/var/www/bzwebs/something/", assetLocationMapper.getFileSystemMapping("autodata://"));
+		assertEquals("/var/www/bzwebs/media.bzresults.net/vdc/standard/", assetLocationMapper.getFileSystemMapping("autodata://"));
 	}
 
 	public void testGetApecBaseFileSystemPath() throws Exception {

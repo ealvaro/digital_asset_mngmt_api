@@ -39,8 +39,8 @@ public class DAMAsset implements java.io.Serializable {
 	/** minimal constructor */
 	public DAMAsset(String fileName, String valveId, Long clientId) {
 		this.fileName = fileName;
-		//TODO link to the default tags
-		//this.type = FilenameUtils.getExtension(fileName);
+		// TODO link to the default tags
+		// this.type = FilenameUtils.getExtension(fileName);
 		this.valveId = valveId;
 		this.clientId = clientId;
 		this.uploadDate = new Date(System.currentTimeMillis());
@@ -48,8 +48,8 @@ public class DAMAsset implements java.io.Serializable {
 	}
 
 	/** full constructor */
-	public DAMAsset(DAMFolder folderId, String fileName, String valveId,
-			Date uploadDate, Long clientId, Byte readOnly, Long ownerId) {
+	public DAMAsset(DAMFolder folderId, String fileName, String valveId, Date uploadDate, Long clientId, Byte readOnly,
+			Long ownerId) {
 		this.folder = folderId;
 		this.fileName = fileName;
 		this.valveId = valveId;
@@ -57,15 +57,14 @@ public class DAMAsset implements java.io.Serializable {
 		this.clientId = clientId;
 		this.readOnly = readOnly;
 		this.ownerId = ownerId;
-		//TODO add parameter with default tags.
+		// TODO add parameter with default tags.
 	}
 
 	// Property accessors
 
 	/**
 	 * @return Returns the id.
-	 * @hibernate.id generator-class = "increment" column = "ID" type =
-	 *               "java.lang.Long"
+	 * @hibernate.id generator-class = "increment" column = "ID" type = "java.lang.Long"
 	 */
 	public Long getId() {
 		return this.id;
@@ -76,8 +75,7 @@ public class DAMAsset implements java.io.Serializable {
 	}
 
 	/**
-	 * @hibernate.many-to-one column = "FOLDER_ID" class =
-	 *                        "net.bzresults.astmgr.model.DAMFolder"
+	 * @hibernate.many-to-one column = "FOLDER_ID" class = "net.bzresults.astmgr.model.DAMFolder"
 	 */
 	public DAMFolder getFolder() {
 		return this.folder;
@@ -135,10 +133,10 @@ public class DAMAsset implements java.io.Serializable {
 		this.clientId = clientId;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "READ_ONLY"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "READ_ONLY"
+	 */
 	public Byte getReadOnly() {
 		return this.readOnly;
 	}
@@ -147,10 +145,10 @@ public class DAMAsset implements java.io.Serializable {
 		this.readOnly = readOnly;
 	}
 
-    /**
-     * @hibernate.property
-     * @hibernate.column name = "OWNER_ID"
-     */
+	/**
+	 * @hibernate.property
+	 * @hibernate.column name = "OWNER_ID"
+	 */
 	public Long getOwnerId() {
 		return this.ownerId;
 	}
@@ -159,20 +157,16 @@ public class DAMAsset implements java.io.Serializable {
 		this.ownerId = ownerId;
 	}
 
-	public boolean isOwnedBy (Long ownerId){
+	public boolean isOwnedBy(Long ownerId) {
 		return this.ownerId.equals(ownerId);
 	}
-	
-    /**
-     * @hibernate.set
-     *   schema = "bzresults"
-     *   table = "dam_tags"
-     *   lazy = "false"
-     *   inverse="true"
-     *   cascade = "all-delete-orphan"
-     * @hibernate.one-to-many class = "net.bzresults.astmgr.model.DAMTag"
-     * @hibernate.key column = "ASSET_ID"
-     */
+
+	/**
+	 * @hibernate.set schema = "bzresults" table = "dam_tags" lazy = "false" inverse="true" cascade =
+	 *                "all-delete-orphan"
+	 * @hibernate.one-to-many class = "net.bzresults.astmgr.model.DAMTag"
+	 * @hibernate.key column = "ASSET_ID"
+	 */
 	public Set<DAMTag> getAssetTags() {
 		return assetTags;
 	}
@@ -180,21 +174,26 @@ public class DAMAsset implements java.io.Serializable {
 	private void setAssetTags(Set<DAMTag> assetTags) {
 		this.assetTags = assetTags;
 	}
+
 	public String getPathAndName() {
-		return (folder == null) ? getFileName() : getFolder().getPath() + "/" + getFileName();
+		return (folder == null) ? getFileName() : (getFolder().getPath().endsWith("/") ? getFolder().getPath()
+				: getFolder().getPath() + "/")
+				+ getFileName();
 	}
-	
+
 	public void addTag(DAMTag tag) {
-		tag.setAssetId(this); 
+		tag.setAssetId(this);
 		assetTags.add(tag);
 	}
 
 	public void removeTag(DAMTag tag) {
-		tag.setAssetId(null);  
-		assetTags.remove(tag); 
+		tag.setAssetId(null);
+		assetTags.remove(tag);
 	}
+
 	@Override
 	public String toString() {
-		return fileName + "  [" + valveId + " : " + uploadDate + " : " + clientId +  " : " + readOnly + "]<--" + (folder != null ? folder.getName() : "null");
+		return fileName + "  [" + valveId + " : " + uploadDate + " : " + clientId + " : " + readOnly + "]<--"
+				+ (folder != null ? folder.getName() : "null");
 	}
-	}
+}

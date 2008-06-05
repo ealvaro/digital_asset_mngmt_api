@@ -100,8 +100,8 @@ public class FolderDAO extends HibernateDaoSupport {
 		}
 	}
 
-	public DAMFolder getValveFolder(Object[] values, String valveid) {
-		return getFolder(values, valveid);
+	public DAMFolder getValveFolder(Object[] values, String valveName) {
+		return getFolder(values, valveName);
 	}
 
 	public DAMFolder getRoot(Object[] values) {

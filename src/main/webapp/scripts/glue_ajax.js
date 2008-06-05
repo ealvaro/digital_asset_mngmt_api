@@ -209,7 +209,7 @@
     {
       var moveAssetName = f.moveAssetName.value;
       var moveToFolderId = f.moveToFolderId.value;
-      var params = "name="+moveAssetName+"&id="+moveToFolderId;
+      var params = "name="+moveAssetName+"&toid="+moveToFolderId;
       doIt('moveAsset',params)
       return false;
     }

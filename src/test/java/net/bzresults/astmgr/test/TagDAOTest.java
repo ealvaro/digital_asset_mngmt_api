@@ -15,8 +15,6 @@ import net.bzresults.astmgr.model.DAMAsset;
 import net.bzresults.astmgr.model.DAMFolder;
 import net.bzresults.astmgr.model.DAMTag;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
@@ -24,8 +22,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  * 
  */
 public class TagDAOTest extends TestCase {
-	private static final Log log = LogFactory.getLog(TagDAOTest.class);
-
 	public static String CONFIG_FILE_LOCATION = "/applicationContext.xml";
 
 	private static final String VALVEID = "V54A";

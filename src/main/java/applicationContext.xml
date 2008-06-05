@@ -23,28 +23,30 @@
 			<ref bean="sessionFactory" />
 		</property>
 	</bean>
-	<bean id="fsdam" class="net.bzresults.astmgr.FSAssetManager">
-		<property name="bzRootDir" value="/var/www/bzwebs/apec" />
-		<property name="oemRootDir" value="/var/www/bzwebs/media/manufacturer/logos" />
-		<property name="autosRootDir" value="/var/www/bzwebs/common-webapps/vdc/standard" />
-	</bean>
 	<bean id="assetLocationMapper" class="net.bzresults.astmgr.beans.AssetLocationMapper">
 		<!--  first is map of protocol to url, 2nd is map of protocol to file system -->
 		<constructor-arg>
 			<map>
 				<entry key="assets://" value="http://media.bzresults.net/assets/" />
-				<entry key="autodata://" value="http://media.bzresults.net/something/" />
+				<entry key="autodata://" value="http://media.bzresults.net/vdc/standard/" />
+				<entry key="oemlogos://" value="http://media.bzresults.net/plugins/media/" />				
 			</map>
 		</constructor-arg>
 		<constructor-arg>
 			<map>
 				<entry key="assets://" value="/var/www/bzwebs/assets/" />
-				<entry key="autodata://" value="/var/www/bzwebs/something/" />
+				<entry key="autodata://" value="/var/www/bzwebs/media.bzresults.net/vdc/standard/" />
+				<entry key="oemlogos://" value="/var/www/bzwebs/media.bzresults.net/plugins/media/" />
 			</map>
 		</constructor-arg>
 		<!--  apec base path ... special case because will still need to have clients serverid added after that -->
 		<constructor-arg>
 			<value>/var/www/bzwebs/apec/</value>
 		</constructor-arg>
+	</bean>
+	<bean id="fsdam" class="net.bzresults.astmgr.FSAssetManager">
+		<property name="assetLocationMapper">
+			<ref bean="assetLocationMapper" />
+		</property>
 	</bean>
 </beans>

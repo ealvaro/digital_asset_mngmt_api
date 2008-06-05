@@ -106,23 +106,26 @@ public class AssetManager implements IAssetManager {
 	private Long ownerId;
 	private String serverId;
 	private String site;
+	private String valveName;
 
-	public AssetManager(String currentValveId, Long currentClientId, Long ownerId, String strServerId) {
-		this(ROOTDIR, currentValveId, currentClientId, ownerId, strServerId, null, null, null, null);
+	public AssetManager(String currentValveId, Long currentClientId, Long ownerId, String strServerId, String valveName) {
+		this(ROOTDIR, currentValveId, currentClientId, ownerId, strServerId, valveName, null, null, null, null);
 	}
 
 	public AssetManager(String currentValveId, Long currentClientId, Long ownerId, String strServerId,
-			FolderDAO folderMngr, AssetDAO assetMngr, TagDAO tagMngr, FSAssetManager fsdam) {
-		this(ROOTDIR, currentValveId, currentClientId, ownerId, strServerId, folderMngr, assetMngr, tagMngr, fsdam);
+			String valveName, FolderDAO folderMngr, AssetDAO assetMngr, TagDAO tagMngr, FSAssetManager fsdam) {
+		this(ROOTDIR, currentValveId, currentClientId, ownerId, strServerId, valveName, folderMngr, assetMngr, tagMngr,
+				fsdam);
 	}
 
 	public AssetManager(String rootDir, String currentValveId, Long currentClientId, Long ownerId, String strServerId,
-			FolderDAO folderMngr, AssetDAO assetMngr, TagDAO tagMngr, FSAssetManager fsdam) {
+			String valveName, FolderDAO folderMngr, AssetDAO assetMngr, TagDAO tagMngr, FSAssetManager fsdam) {
 		this.damRootDir = rootDir;
 		this.currentValveId = currentValveId;
 		this.currentClientId = currentClientId;
 		this.ownerId = ownerId;
 		this.serverId = strServerId;
+		this.valveName = valveName;
 		if (folderMngr == null || assetMngr == null || tagMngr == null || fsdam == null) {
 			this.factory = new ClassPathXmlApplicationContext(CONFIG_FILE_LOCATION);
 			this.folderMngr = FolderDAO.getFromApplicationContext(factory);
@@ -160,7 +163,7 @@ public class AssetManager implements IAssetManager {
 				+ "/My Digital Ads");
 		createSystemFolder("My Prints", "Print Assets (*.pdf, *.doc)", "*.pdf,*.doc", this.currentFolder.getPath()
 				+ "/My Prints");
-		createSystemFolder(DAMFolder.BZLOGO, "BZ created logo (*.swf)", "*.swf", fsdam.getBzRootDir() + "/"
+		createSystemFolder(DAMFolder.BZLOGO, "BZ created logo (*.swf)", "*.swf", fsdam.getBzRootDir()
 				+ this.getServerId() + "/media");
 
 		log.debug(this.currentClientId + ": Created System folders");
@@ -185,8 +188,8 @@ public class AssetManager implements IAssetManager {
 
 	private DAMFolder createValveFolder() {
 		String path = getDamRootDir() + "/" + this.currentClientId + "/" + this.currentValveId;
-		DAMFolder valveFolder = new DAMFolder(getRoot(), "Valve Folder", this.currentValveId, "*.*",
-				this.currentValveId, this.currentClientId, DAMFolder.VISIBLE, DAMFolder.WRITABLE, DAMFolder.SYSTEM,
+		DAMFolder valveFolder = new DAMFolder(getRoot(), "ValveID: " + getCurrentValveId(), getValveName(), "*.*",
+				getCurrentValveId(), getCurrentClientId(), DAMFolder.VISIBLE, DAMFolder.WRITABLE, DAMFolder.SYSTEM,
 				path, null, null);
 		folderMngr.save(valveFolder);
 		try {
@@ -790,25 +793,30 @@ public class AssetManager implements IAssetManager {
 		if (fromFolder != null && toFolder != null)
 			// Folder not already there
 			if (!fromFolder.getParentFolder().getId().equals(toFolder.getId()))
-				// ToFolder doesn't have already a fromFolder
-				if (findFolderInCurrentFolder(toFolder, fromFolder.getName()) == null)
-					// both folders are NOT readonly
-					if (!fromFolder.getReadOnly().equals(DAMFolder.READONLY)
-							&& !toFolder.getReadOnly().equals(DAMFolder.READONLY)) {
-						fsdam.moveFolderOnFileSystem(this, fromFolder, toFolder);
-						currentFolder.removeSubFolder(fromFolder);
-						setNewPathForFolder(fromFolder, toFolder.getPath());
-						toFolder.addSubFolder(fromFolder);
-						folderMngr.attachDirty(fromFolder);
-						folderMngr.attachDirty(toFolder);
-						log.debug(this.currentClientId + ": Moved folder '" + fromFolder.getName() + "' to folder '"
-								+ toFolder.getName() + "'");
-					} else
-						log.error(this.currentClientId + ": folder '" + fromFolder.getName()
-								+ "' is read-only or folder '" + toFolder.getName() + "' is read-only");
+				// fromFolder not moved onto itself
+				if (!fromFolder.getId().equals(toFolder.getId()))
+					// ToFolder doesn't have already a fromFolder
+					if (findFolderInCurrentFolder(toFolder, fromFolder.getName()) == null)
+						// both folders are NOT readonly
+						if (!fromFolder.getReadOnly().equals(DAMFolder.READONLY)
+								&& !toFolder.getReadOnly().equals(DAMFolder.READONLY)) {
+							fsdam.moveFolderOnFileSystem(this, fromFolder, toFolder);
+							currentFolder.removeSubFolder(fromFolder);
+							setNewPathForFolder(fromFolder, toFolder.getPath());
+							toFolder.addSubFolder(fromFolder);
+							folderMngr.attachDirty(fromFolder);
+							folderMngr.attachDirty(toFolder);
+							log.debug(this.currentClientId + ": Moved folder '" + fromFolder.getName()
+									+ "' to folder '" + toFolder.getName() + "'");
+						} else
+							log.error(this.currentClientId + ": folder '" + fromFolder.getName()
+									+ "' is read-only or folder '" + toFolder.getName() + "' is read-only");
+					else
+						log.error(this.currentClientId + ": Can't move folder name '" + fromFolder.getName()
+								+ "' to folder '" + toFolder.getName() + "' because there is already one there");
 				else
 					log.error(this.currentClientId + ": Can't move folder name '" + fromFolder.getName()
-							+ "' to folder '" + toFolder.getName() + "' because there is already one there");
+							+ "' on to itself");
 			else
 				log.error(this.currentClientId + ": Can't move folder name '" + fromFolder.getName()
 						+ "' to the same folder it's at");
@@ -872,36 +880,53 @@ public class AssetManager implements IAssetManager {
 			currentFolder = createRecentItemsQueryFolder("Recent Items", "Assets uploaded during the last hour");
 			// ?action=queryFolder&name=oemlogos
 		} else if (queryName.equals("oemlogos")) {
-			currentFolder = createVirtualFolder(fsdam.getOemRootDir(), "OEM Logos", "BZ Provided Assets");
+			currentFolder = createOEMLogosVirtualFolder(fsdam.getOemRootDir(), "OEM Logos", "BZ Provided Assets");
 			// ?action=queryFolder&name=oemlogos
 		} else if (queryName.equals("autos")) {
-			currentFolder = createVirtualFolder(fsdam.getAutosRootDir(), "Autos", "Vehicle Assets");
+			currentFolder = createAutosVirtualFolder(fsdam.getAutosRootDir(), "Autos", "Vehicle Assets");
 		}
 
 	}
 
-	private DAMFolder createVirtualFolder(String filePath, String folderName, String description) {
-		DAMFolder damFolder = virtualFolderContents(filePath, folderName, description);
-		log.debug(this.currentClientId + ": Created Virtual DAMFolder '" + folderName + "' with " + description
-				+ " from path " + filePath);
-		return damFolder;
-	}
-
-	private DAMFolder virtualFolderContents(String fsPath, String folderName, String desc) {
-		File folderList = new File(fsPath);
+	private DAMFolder createAutosVirtualFolder(String filePath, String folderName, String description) {
+		File folderList = new File(filePath);
 		FileFilter filter = new AllFilesFilter();
 		File[] listing = folderList.listFiles(filter);
-		DAMFolder virtualFolder = new DAMFolder(null, desc, folderName, "*.*", currentValveId, currentClientId,
-				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, fsPath, new HashSet<DAMAsset>(16),
-				new HashSet<DAMFolder>(16));
+		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId,
+				currentClientId, DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, filePath,
+				new HashSet<DAMAsset>(16), new HashSet<DAMFolder>(16));
 		for (File item : listing) {
-			if (item.isDirectory())
-				virtualFolder
-						.addSubFolder(virtualFolderContents(fsPath + "/" + item.getName(), item.getName(), item.getName()));
-			else
-				virtualFolder.addAsset(new DAMAsset(virtualFolder, item.getName(), currentValveId, new Date(System
-						.currentTimeMillis()), currentClientId, DAMAsset.READONLY, ownerId));
+			// this is only needed when wanting subfolders content as well
+			// if (item.isDirectory())
+			// virtualFolder.addSubFolder(virtualFolderContents(fsPath + "/" + item.getName(), item.getName(), item
+			// .getName()));
+			// else
+			virtualFolder.addAsset(new DAMAsset(virtualFolder, item.getName(), currentValveId, new Date(System
+					.currentTimeMillis()), currentClientId, DAMAsset.READONLY, ownerId));
 		}
+		log.debug(this.currentClientId + ": Created Virtual DAMFolder '" + folderName + "' with " + description
+				+ " from path " + filePath);
+		return virtualFolder;
+	}
+
+	private DAMFolder createOEMLogosVirtualFolder(String fsPath, String folderName, String desc) {
+		File folderList = new File(fsPath);
+		FileFilter filter = new ManufacturerFilesFilter();
+		File[] listing = folderList.listFiles(filter);
+		DAMFolder virtualFolder = new DAMFolder(null, desc, folderName, "manufacturer-*.*", currentValveId,
+				currentClientId, DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, fsPath,
+				new HashSet<DAMAsset>(16), new HashSet<DAMFolder>(16));
+		for (File item : listing) {
+			// this is only needed when wanting subfolders content as well
+			// if (item.isDirectory())
+			// virtualFolder.addSubFolder(virtualFolderContents(fsPath + "/" + item.getName(), item.getName(), item
+			// .getName()));
+			// else
+			virtualFolder.addAsset(new DAMAsset(virtualFolder, item.getName(), currentValveId, new Date(System
+					.currentTimeMillis()), currentClientId, DAMAsset.READONLY, ownerId));
+		}
+		log.debug(this.currentClientId + ": Created Virtual DAMFolder '" + folderName + "' with " + desc
+				+ " from path " + fsPath);
 
 		return virtualFolder;
 	}
@@ -1179,7 +1204,7 @@ public class AssetManager implements IAssetManager {
 	}
 
 	public DAMFolder getValveFolder() {
-		return this.folderMngr.getValveFolder(getCriteria_values(), this.currentValveId);
+		return this.folderMngr.getValveFolder(getCriteria_values(), getValveName());
 	}
 
 	public DAMFolder getRoot() {
@@ -1246,6 +1271,21 @@ public class AssetManager implements IAssetManager {
 	 */
 	public void setSite(String site) {
 		this.site = site;
+	}
+
+	/**
+	 * @return the site
+	 */
+	public String getValveName() {
+		return valveName;
+	}
+
+	/**
+	 * @param site
+	 *            the site to set
+	 */
+	public void setValveName(String valveName) {
+		this.valveName = valveName;
 	}
 
 	/*
