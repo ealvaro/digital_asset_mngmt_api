@@ -49,12 +49,12 @@ public interface IAssetManager {
 
 	/**
 	 * Will create a folder with the following characteristics:
-	 * 1. - Virtual: Meaning will not exist in the O/S file structure.
+	 * 1. - Virtual: A read-only folder that exists in the O/S only, but not in the DAM database.
 	 * 2. - Read-Only: Meaning nobody will be able to create, move, delete or rename assets in it.
 	 * 3. - Pre-Defined: Meaning queryName will be part of a predefined list of names, with pre-defined wild cards.
 	 * @param queryName
 	 */
-	public abstract void virtualFolder(String queryName);
+	public abstract void virtualFolder(String queryName, String startPath);
 
 	public abstract void deleteFolder(java.lang.Long id) throws AssetManagerException;
 

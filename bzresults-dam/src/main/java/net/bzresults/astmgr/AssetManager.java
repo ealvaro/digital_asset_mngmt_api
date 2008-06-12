@@ -874,7 +874,7 @@ public class AssetManager implements IAssetManager {
 	 * 
 	 * @see net.bzresults.astmgr.IAssetManager#virtualFolder(java.lang.String)
 	 */
-	public void virtualFolder(String queryName) {
+	public void virtualFolder(String queryName, String startPath) {
 		// ?action=queryFolder&name=recent
 		if (queryName.equals("recent")) {
 			currentFolder = createRecentItemsQueryFolder("Recent Items", "Assets uploaded during the last hour");
@@ -883,7 +883,8 @@ public class AssetManager implements IAssetManager {
 			currentFolder = createOEMLogosVirtualFolder(fsdam.getOemRootDir(), "OEM Logos", "BZ Provided Assets");
 			// ?action=queryFolder&name=oemlogos
 		} else if (queryName.equals("autos")) {
-			currentFolder = createAutosVirtualFolder(fsdam.getAutosRootDir(), "Autos", "Vehicle Assets");
+			currentFolder = createAutosVirtualFolder(fsdam.getAutosRootDir() + startPath, "Autos",
+					"Vehicle Assets under " + startPath);
 		}
 
 	}
@@ -892,17 +893,20 @@ public class AssetManager implements IAssetManager {
 		File folderList = new File(filePath);
 		FileFilter filter = new AllFilesFilter();
 		File[] listing = folderList.listFiles(filter);
-		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId,
-				currentClientId, DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, filePath,
-				new HashSet<DAMAsset>(16), new HashSet<DAMFolder>(16));
+		DAMFolder virtualFolder = new DAMFolder(null, description, folderName, "*.*", currentValveId, currentClientId,
+				DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, filePath, new HashSet<DAMAsset>(16),
+				new HashSet<DAMFolder>(16));
 		for (File item : listing) {
-			// this is only needed when wanting subfolders content as well
-			// if (item.isDirectory())
-			// virtualFolder.addSubFolder(virtualFolderContents(fsPath + "/" + item.getName(), item.getName(), item
-			// .getName()));
-			// else
-			virtualFolder.addAsset(new DAMAsset(virtualFolder, item.getName(), currentValveId, new Date(System
-					.currentTimeMillis()), currentClientId, DAMAsset.READONLY, ownerId));
+			if (item.isDirectory())
+				// this is only needed when wanting subfolder's content as well
+				// virtualFolder.addSubFolder(virtualFolderContents(fsPath + "/" + item.getName(), item.getName(), item
+				// .getName()));
+				virtualFolder.addSubFolder(new DAMFolder(virtualFolder, description, item.getName(), "*.*",
+						currentValveId, currentClientId, DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM,
+						filePath + item.getName(), new HashSet<DAMAsset>(16), new HashSet<DAMFolder>(16)));
+			else
+				virtualFolder.addAsset(new DAMAsset(virtualFolder, item.getName(), currentValveId, new Date(System
+						.currentTimeMillis()), currentClientId, DAMAsset.READONLY, ownerId));
 		}
 		log.debug(this.currentClientId + ": Created Virtual DAMFolder '" + folderName + "' with " + description
 				+ " from path " + filePath);
@@ -917,7 +921,7 @@ public class AssetManager implements IAssetManager {
 				currentClientId, DAMFolder.VISIBLE, DAMFolder.READONLY, DAMFolder.NOT_SYSTEM, fsPath,
 				new HashSet<DAMAsset>(16), new HashSet<DAMFolder>(16));
 		for (File item : listing) {
-			// this is only needed when wanting subfolders content as well
+			// this is only needed when wanting subfolder's content as well
 			// if (item.isDirectory())
 			// virtualFolder.addSubFolder(virtualFolderContents(fsPath + "/" + item.getName(), item.getName(), item
 			// .getName()));
