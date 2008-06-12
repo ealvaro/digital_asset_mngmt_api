@@ -21,16 +21,19 @@ public class QueryFolderAction implements IDAMAction {
 
 	public void execute() {
 		String queryName = request.getParameter("name");
+		String path = request.getParameter("path");
+		// path parameter is optional
+		path = (path == null ? "" : path);
 		if (queryName.equals("oemlogos")) {
 			HttpSession session = request.getSession();
 			DAMFolder oem =(DAMFolder) session.getAttribute(OEM_PARAM);
 			if (oem == null) {
-				am.virtualFolder(queryName);
+				am.virtualFolder(queryName, path);
 				session.setAttribute(OEM_PARAM, am.getCurrentFolder());
 			} else
 				am.setCurrentFolder(oem);
 		} else
-			am.virtualFolder(queryName);
+			am.virtualFolder(queryName, path);
 	}
 
 }

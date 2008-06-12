@@ -260,7 +260,7 @@ public class AssetManagerTest extends TestCase {
 	 */
 	public void testVirtualFolders() {
 		// recently created assets
-		manager.virtualFolder("recent");
+		manager.virtualFolder("recent","");
 		if (manager.getCurrentFolder().getAssetFiles().isEmpty()
 				&& manager.getCurrentFolder().getSubFolders().isEmpty()) {
 			fail("No recent assets listed");
@@ -268,7 +268,7 @@ public class AssetManagerTest extends TestCase {
 			assert (true);
 		}
 		// OEM Logos
-		manager.virtualFolder("oemlogos");
+		manager.virtualFolder("oemlogos","");
 		if (manager.getCurrentFolder().getAssetFiles().isEmpty()
 				&& manager.getCurrentFolder().getSubFolders().isEmpty()) {
 			fail("No OEM Logos listed");
@@ -276,7 +276,7 @@ public class AssetManagerTest extends TestCase {
 			assert (true);
 		}
 		// Vehicle assets
-		manager.virtualFolder("autos");
+		manager.virtualFolder("autos","us/2008");
 		if (manager.getCurrentFolder().getAssetFiles().isEmpty()
 				&& manager.getCurrentFolder().getSubFolders().isEmpty()) {
 			fail("No vehicle assets listed");
